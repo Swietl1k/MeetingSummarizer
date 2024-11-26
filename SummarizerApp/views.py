@@ -10,16 +10,31 @@ import time
 import pyaudiowpatch as pyaudio
 import wave
 from pathlib import Path
+from groq import Groq
+from PIL import ImageGrab
+import os
+
+
 
 CHUNK_SIZE = 1024
 MAX_RECORD_LENGTH = 3 * 60 * 60  # 3 hours
 MONITOR_INTERVAL = 10
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-WAVE_OUTPUT_DIR = str(BASE_DIR) + "\\Recordings"
+RECORDINGS_DIR = str(BASE_DIR) + "\\Recordings"
+SCREENSHOT_INTERVAL = 20 # secconds
 
 stop_recording = threading.Event()
 stop_monitoring = threading.Event()
 recording_thread = None
+
+key_file = open(f'{BASE_DIR}\\key.txt', 'r')
+key = key_file.read()
+
+client = Groq(
+    api_key = key
+)
+
+
 
 def monitor_recording_schedule():
     global stop_monitoring, stop_recording
@@ -32,7 +47,8 @@ def monitor_recording_schedule():
         for rt in RecordingTime.objects.all():
             if rt.time_start <= current_time <= rt.time_end:
                 recording_length = int((rt.time_end - rt.time_start).total_seconds())
-                recording_path = f'{WAVE_OUTPUT_DIR}\\{(str(rt.time_start)).replace(" ", "-").replace(":", "-")}.wav'
+                recording_path = f'{RECORDINGS_DIR}\\{(str(rt.time_start)).replace(" ", "-").replace(":", "-")}'
+                os.mkdir(recording_path)
                 stop_recording.clear()
                 recording_thread = threading.Thread(target=record_audio, args=(recording_length, recording_path), daemon=True)
                 recording_thread.start()
@@ -41,8 +57,16 @@ def monitor_recording_schedule():
         time.sleep(MONITOR_INTERVAL)
 
 
+####### START MONITORING THREAD
+monitoring_thread = threading.Thread(target=monitor_recording_schedule, daemon=True)
+monitoring_thread.start()
+#######
+
+
 def record_audio(recording_length, recording_path):
     global stop_recording
+    wav_path = recording_path + '\\recording.wav'
+    txt_path = recording_path + '\\recording.txt'
     with pyaudio.PyAudio() as p:
 
         try:
@@ -66,7 +90,7 @@ def record_audio(recording_length, recording_path):
 
         print(f"Recording from: ({default_speakers['index']}){default_speakers['name']}")
 
-        wave_file = wave.open(recording_path, 'wb')
+        wave_file = wave.open(wav_path, 'wb')
         wave_file.setnchannels(default_speakers["maxInputChannels"])
         wave_file.setsampwidth(pyaudio.get_sample_size(pyaudio.paInt16))
         wave_file.setframerate(int(default_speakers["defaultSampleRate"]))
@@ -83,23 +107,37 @@ def record_audio(recording_length, recording_path):
                     input_device_index=default_speakers["index"],
                     stream_callback=callback
                     ) as stream:
-            print(f"The next {recording_length} seconds will be written to {recording_path}")
+            print(f"The next {recording_length} seconds will be written to {wav_path}")
 
             for i in range(recording_length):
+                if i % SCREENSHOT_INTERVAL == 0:
+                    screenshot = ImageGrab.grab()
+                    screenshot.save(f'{recording_path}\\screenshot{i // SCREENSHOT_INTERVAL}.png')
+
                 if stop_recording.is_set():
                     break
                 time.sleep(1)
 
+        screenshot.close()
         wave_file.close()
+        transcription = transcribe(wav_path)
+        with open(txt_path, 'w') as f:
+            f.write(transcription)
+
         monitoring_thread = threading.Thread(target=monitor_recording_schedule, daemon=True)
         monitoring_thread.start()
 
 
-####### START MONITORING THREAD
-monitoring_thread = threading.Thread(target=monitor_recording_schedule, daemon=True)
-monitoring_thread.start()
-#######
-
+def transcribe(file_path):
+    with open(file_path, "rb") as file:
+        transcription = client.audio.transcriptions.create(
+            file=(file_path, file.read()),
+            model="whisper-large-v3-turbo",
+            response_format="verbose_json",
+        )
+        
+    return transcription.text
+    
 
 @api_view(['GET'])
 def start_recording(request):
@@ -111,7 +149,8 @@ def start_recording(request):
     stop_monitoring.set()
     monitoring_thread.join() # wait for the monitor thread to finish
     current_time = datetime.now()
-    recording_path = f'{WAVE_OUTPUT_DIR}\\{(str(current_time)).replace(" ", "-").replace(":", "-")}.wav'
+    recording_path = f'{RECORDINGS_DIR}\\{(str(current_time)).replace(" ", "-").replace(":", "-")}.wav'
+    os.mkdir(recording_path)
 
     stop_recording.clear()
     recording_thread = threading.Thread(target=record_audio, args=(MAX_RECORD_LENGTH, recording_path), daemon=True)
