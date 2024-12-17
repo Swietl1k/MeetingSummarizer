@@ -3,7 +3,8 @@ from django.contrib.auth.hashers import make_password, check_password  # Import 
 
 class User(models.Model):
     UID = models.AutoField(primary_key=True)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=255)  # hashed
 
     def set_hash_password(self, raw_password):
@@ -19,8 +20,24 @@ class User(models.Model):
 
 class RecordingTime(models.Model):
     RID = models.AutoField(primary_key=True)
+    UID = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name='recordings', db_index=True)
+    title = models.CharField(max_length=255)
     time_start = models.DateTimeField()
     time_end = models.DateTimeField()
 
     def __str__(self):
-        return str(self.time_start)
+        return str(self.title)
+    
+
+class Summary(models.Model):
+    SID = models.AutoField(primary_key=True)
+    UID = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name='summaries', db_index=True)  # Links to User
+    title = models.CharField(max_length=255)
+    time_start = models.DateTimeField()
+    time_end = models.DateTimeField()
+    transcription = models.TextField()  
+    summary = models.TextField()  
+
+    def __str__(self):
+        return f"Summary for {self.title} by {self.UID.username}"
+
