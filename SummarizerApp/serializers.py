@@ -22,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
 class RecordingTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecordingTime
-        fields = ['RID', 'time_start', 'time_end']
+        fields = ['RID', 'time_start', 'time_end', 'UID', 'title']
 
     '''
     def create(self, validated_data):

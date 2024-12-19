@@ -23,9 +23,6 @@ load_dotenv()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ojetc)z9h56rcko13p(hp(obtapvqji#v&gx&81($aa+*ok)op'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -92,6 +89,37 @@ DATABASES = {
         'PORT': '10584',
     }
 }
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "[{asctime}] {levelname} - {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "SummarizerApp": {  # Your app's logger
+            "handlers": ["console"],
+            "level": "DEBUG",  # Change to INFO, WARNING, etc., if needed
+            "propagate": False,
+        },
+        # Optionally suppress Django's default logs
+        "django": {
+            "handlers": ["console"],
+            "level": "WARNING",  # Only show warnings or higher for Django logs
+            "propagate": False,
+        },
+    },
+}
+
 
 
 # Password validation

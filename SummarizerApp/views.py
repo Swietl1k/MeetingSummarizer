@@ -16,6 +16,7 @@ import os
 import pytesseract
 import random 
 import shutil
+import logging 
 
 
 CHUNK_SIZE = 1024
@@ -29,6 +30,7 @@ SCREENSHOT_INTERVAL = 20 # secconds between each screenshot while recording a me
 stop_recording = threading.Event()
 stop_monitoring = threading.Event()
 recording_thread = None
+logger = logging.getLogger('SummarizerApp')
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\Program Files\Tesseract-OCR\\tesseract'
 key_file = open(f'{BASE_DIR}\\key.txt', 'r')
@@ -48,15 +50,33 @@ def monitor_recording_schedule(uid):
         current_time = datetime.now()
         print(current_time)
 
-        for rt in RecordingTime.objects.all():
-            if rt.time_start <= current_time <= rt.time_end:
-                recording_length = int((rt.time_end - rt.time_start).total_seconds())
-                recording_path = f'{RECORDINGS_DIR}\\{rt.RID}'
-                os.mkdir(recording_path)
-                stop_recording.clear()
-                recording_thread = threading.Thread(target=record_audio, args=(recording_length, recording_path, uid, rt.title), daemon=True)
-                recording_thread.start()
-                stop_monitoring.set()
+        try:
+            recording_times = RecordingTime.objects.get(UID=uid)
+
+            for rt in recording_times:
+                if rt.time_start <= current_time <= rt.time_end:
+                    recording_length = int((rt.time_end - current_time).total_seconds())
+                    recording_path = f'{RECORDINGS_DIR}\\{rt.RID}'
+
+                    try:
+                        os.mkdir(recording_path)
+                    except FileExistsError:
+                        logger.warning(f'directory already exists: {recording_path}')
+
+                    stop_recording.clear()
+                    recording_thread = threading.Thread(target=record_audio, args=(recording_length, recording_path, uid, rt.title), daemon=True)
+                    recording_thread.start()
+                    stop_monitoring.set()
+
+                elif rt.time_end < current_time:
+                    rid = rt.RID
+                    rt.delete()
+                    logger.info(f'RecordingTime deleted RID={rid}')
+
+        except RecordingTime.DoesNotExist: 
+            logger.info('no recordings available')
+        except Exception as e:
+            logger.error(f'error in the monitoring thread: {str(e)}')
 
         time.sleep(MONITOR_INTERVAL)
 
@@ -69,6 +89,8 @@ def record_audio(recording_length, recording_path, uid, title):
     current_length = 0
     wav_index = 0
     time_start = datetime.now()
+    screenshot = ImageGrab.grab()
+
 
     with pyaudio.PyAudio() as p:
 
@@ -76,7 +98,7 @@ def record_audio(recording_length, recording_path, uid, title):
             # Get default WASAPI info
             wasapi_info = p.get_host_api_info_by_type(pyaudio.paWASAPI)
         except OSError:
-            print("Looks like WASAPI is not available on the system. Exiting...")
+            logger.critical("Looks like WASAPI is not available on the system. Exiting...")
             exit()
 
         # Get default WASAPI speakers
@@ -88,10 +110,10 @@ def record_audio(recording_length, recording_path, uid, title):
                     default_speakers = loopback
                     break
             else:
-                print("Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n")
+                logger.critical("Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available devices.\nExiting...\n")
                 exit()
 
-        print(f"Recording from: ({default_speakers['index']}){default_speakers['name']}")
+        logger.info(f"Recording from: ({default_speakers['index']}){default_speakers['name']}")
 
         while current_length < recording_length and not stop_recording.is_set():
             wave_file = wave.open(f'{recording_path}\\audio_{wav_index}.wav', 'wb')
@@ -120,16 +142,14 @@ def record_audio(recording_length, recording_path, uid, title):
 
                 for i in range(time_wait):
                     if i % SCREENSHOT_INTERVAL == 0:
-                            print('screen')
-                            screenshot = ImageGrab.grab()
                             screenshot.save(f'{recording_path}\\screenshot{i // SCREENSHOT_INTERVAL}.png')
+                            logger.info('screenshot')
                     elif stop_recording.is_set():
                             break
                     
                     time.sleep(1)
 
             time_end = datetime.now()
-            screenshot.close()
             wave_file.close()
 
             transcription_thread = threading.Thread(target=transcribe, args=(recording_path, wav_index), daemon=True)
@@ -137,16 +157,20 @@ def record_audio(recording_length, recording_path, uid, title):
                 # when recording is a couple seconds longer than whole minutes, this waits up to 10s for the last transcription to finish
                 # if not than runs transcription thread immediately
                 if not transcription_thread.is_alive():
+                    logger.debug(f'transcription wav_index={wav_index}')
                     transcription_thread.start()
                     break
 
-                print("waiting")
+                if i == 9:
+                    logger.error("transcription thread didnt terminate in time")
+
                 time.sleep(1)
 
             current_length += RECORDING_INTERVAL
             wav_index += 1
 
-
+ 
+        screenshot.close()
         transcription_thread.join()
         monitoring_thread = threading.Thread(target=monitor_recording_schedule, args=(uid,), daemon=True)
         monitoring_thread.start()
@@ -168,6 +192,7 @@ def transcribe(recording_path, wav_index):
         
     with open(txt_path, 'w') as file:
         file.write(transcription.text)
+        logger.debug(f"transcription file saved wav_index={wav_index}")
 
 
 
@@ -198,8 +223,7 @@ def process_recording(recording_path, wav_index, uid, title, time_start, time_en
         summary.save()
 
     except Exception as e:
-            #logging.error(f"Error saving summary: {e}")
-            print(f"Error saving summary: {e}")
+            logging.error(f"Error saving summary: {e} \n files saved localy in: \n {recording_path}")
             os.mkdir(recording_path)
             
             # Save the transcription and summary locally if saving the summary fails
@@ -250,8 +274,10 @@ def summarizeText(recording_path):
         return summary
 
     except FileNotFoundError:
+        logger.error("text_combined.txt not found ")
         return "Error: The specified file was not found."
     except Exception as e:
+        logger.error(str(e))
         return f"An error occurred: {str(e)}"
 
 
@@ -275,6 +301,7 @@ def start_monitoring(request):
     #######
     return Response({'message': 'monitor started'}, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 def test(request):
     print('tesseract: ')
@@ -290,7 +317,6 @@ def register(request):
     "username": <string: example>,
     "password": <string: example>,
     }
-
     '''
 
     serializer = UserSerializer(data=request.data)
@@ -328,6 +354,7 @@ def login(request):
 @api_view(['GET'])
 def logout(request):
     request.session.pop('uid', None)
+    return Response({'error': 'User logged out'}, status=status.HTTP_200_OK)
 
 
 
