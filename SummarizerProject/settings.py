@@ -23,6 +23,9 @@ load_dotenv()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', '').strip()
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -84,7 +87,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'railway',
         'USER': 'postgres',
-        'PASSWORD': os.getenv('RAILWAY_IO_PASSWORD'),
+        'PASSWORD': os.getenv('RAILWAY_IO_PASSWORD', '').strip(),
         'HOST': 'autorack.proxy.rlwy.net',
         'PORT': '10584',
     }

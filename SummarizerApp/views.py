@@ -33,8 +33,7 @@ recording_thread = None
 logger = logging.getLogger('SummarizerApp')
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\Program Files\Tesseract-OCR\\tesseract'
-key_file = open(f'{BASE_DIR}\\key.txt', 'r')
-key = key_file.read()
+key = os.getenv('GROQ_API_KEY', '').strip()
 
 client = Groq(
     api_key = key
@@ -51,7 +50,8 @@ def monitor_recording_schedule(uid):
         print(current_time)
 
         try:
-            recording_times = RecordingTime.objects.get(UID=uid)
+            recording_times = RecordingTime.objects.filter(UID=uid)
+            print(recording_times)
 
             for rt in recording_times:
                 if rt.time_start <= current_time <= rt.time_end:
@@ -157,7 +157,7 @@ def record_audio(recording_length, recording_path, uid, title):
                 # when recording is a couple seconds longer than whole minutes, this waits up to 10s for the last transcription to finish
                 # if not than runs transcription thread immediately
                 if not transcription_thread.is_alive():
-                    logger.debug(f'transcription wav_index={wav_index}')
+                    logger.debug(f'transcription thread started, wav_index={wav_index}')
                     transcription_thread.start()
                     break
 
@@ -304,9 +304,7 @@ def start_monitoring(request):
 
 @api_view(['GET'])
 def test(request):
-    print('tesseract: ')
-    print(pytesseract.image_to_string(f'{RECORDINGS_DIR}\\test\\screenshot0.0.png'))
-    return Response({'message': 'testting'})
+    return Response({'uid': f'{request.session.get("uid", None)}'})
 
 
 @api_view(['POST'])
@@ -420,19 +418,19 @@ def schedule_recording(request):
     request_body structure:
     {   
         #"UID": "<int: User ID>",
-        #"title": "<string: example>",
+        "title": "<string: example>",
         "time_start": "<string: YYYY-MM-DDTHH:mm:ss>",
         "time_end": "<string: YYYY-MM-DDTHH:mm:ss>",
     }
     '''
     uid = request.session.get('uid', None)
-    title = 'todo!()'
 
     if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
     try:
+        title = request.data['title']
         time_start = request.data['time_start'].replace(':', '-').replace('T', '-')
         time_end = request.data['time_end'].replace(':', '-').replace('T', '-')
         time_start = datetime.strptime(time_start, "%Y-%m-%d-%H-%M-%S")

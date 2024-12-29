@@ -26,7 +26,7 @@ class RecordingTime(models.Model):
     time_end = models.DateTimeField()
 
     def __str__(self):
-        return str(self.title)
+        return str(f"RID: {self.RID}, Title: {self.title}, Time Start: {self.time_start}, Time End: {self.time_end}")
     
 
 class Summary(models.Model):
