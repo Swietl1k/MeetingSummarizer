@@ -4,11 +4,12 @@ import os
 import pyaudiowpatch as pyaudio
 import wave
 from datetime import datetime
-from PIL import ImageGrab
 import logging
 from pathlib import Path
 from .processing import transcribe, process_recording 
 from SummarizerApp.threading_variables import stop_recording
+from .screenshot import take_screenshot
+
 
 logger = logging.getLogger('SummarizerApp')
 CHUNK_SIZE = 1024
@@ -20,13 +21,12 @@ RECORDING_INTERVAL = 60 # max 60 secconds so it doesnt exceed groq whisper limit
 SCREENSHOT_INTERVAL = 20 # secconds between each screenshot while recording a meeting
 
 
-def record_audio(recording_length, recording_path, uid, title):
+def record_meeting(recording_length, recording_path, uid, title, window_name = None):
     from .scheduler import monitor_recording_schedule
     current_length = 0
     wav_index = 0
     time_start = datetime.now()
-    screenshot = ImageGrab.grab()
-
+    stop_recording.clear()
 
     with pyaudio.PyAudio() as p:
 
@@ -78,8 +78,8 @@ def record_audio(recording_length, recording_path, uid, title):
 
                 for i in range(time_wait):
                     if i % SCREENSHOT_INTERVAL == 0:
-                            screenshot.save(f'{recording_path}\\screenshot{i // SCREENSHOT_INTERVAL}.png')
-                            logger.info('screenshot')
+                            screenshot_path = f'{recording_path}\\screenshot{(i + current_length) // SCREENSHOT_INTERVAL}.png'
+                            take_screenshot(screenshot_path, window_name)
                     elif stop_recording.is_set():
                             break
                     
@@ -106,7 +106,6 @@ def record_audio(recording_length, recording_path, uid, title):
             wav_index += 1
 
  
-        screenshot.close()
         transcription_thread.join()
         monitoring_thread = threading.Thread(target=monitor_recording_schedule, args=(uid,), daemon=True)
         monitoring_thread.start()

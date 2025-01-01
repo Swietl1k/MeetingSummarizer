@@ -4,11 +4,12 @@ import threading
 from rest_framework.response import Response
 from datetime import datetime
 from .models import User, RecordingTime, Summary
-from .serializers import UserSerializer, RecordingTimeSerializer
-from .tasks.audio import record_audio
+from .serializers import UserSerializer, RecordingTimeSerializer, SummarySerializer
+from .tasks.recording import record_meeting
 from .tasks.scheduler import monitor_recording_schedule 
 from .threading_variables import stop_recording, stop_monitoring, monitor_error_flag
 from rest_framework import status
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import time
 import pyaudiowpatch as pyaudio
 import wave
@@ -114,13 +115,14 @@ def start_recording(request):
     '''
     request_body structure:
     {
-        "title": "<string: example>",  
-        #"UID": "<int:>",  
+        "title": "<string: meeting title>",  
+        "window_name": "<string: browser window name>" or Null, #optional
     }
     '''
     global recording_thread, monitoring_thread
 
     title = request.data['title']
+    window_name = request.data.get('window_name', None)
     uid = request.session.get('uid', None)
 
     if not uid:
@@ -138,10 +140,12 @@ def start_recording(request):
     os.mkdir(recording_path)
 
     stop_recording.clear()
-    recording_thread = threading.Thread(target=record_audio, args=(MAX_RECORD_LENGTH, recording_path, uid, title), daemon=True)
+    recording_thread = threading.Thread(target=record_meeting, args=(MAX_RECORD_LENGTH, recording_path, uid, title, window_name), daemon=True)
     recording_thread.start()
 
-    return Response({"message": "Recording started."}, status=status.HTTP_202_ACCEPTED)  
+    time.sleep(1)
+    if recording_thread.is_alive():
+        return Response({"message": "Recording started."}, status=status.HTTP_202_ACCEPTED)  
 
 
 @api_view(['GET'])
@@ -178,8 +182,8 @@ def schedule_recording(request):
     '''
     request_body structure:
     {   
-        #"UID": "<int: User ID>",
-        "title": "<string: example>",
+        "title": "<string: meeting title>",
+        "window_name": "<string: browser window name>" or Null, #optional
         "time_start": "<string: YYYY-MM-DDTHH:mm:ss>",
         "time_end": "<string: YYYY-MM-DDTHH:mm:ss>",
     }
@@ -219,7 +223,6 @@ def schedule_recording(request):
 
     data = request.data.copy()
     data['UID'] = uid
-    data['title'] = title
 
     serializer = RecordingTimeSerializer(data=data)
     if serializer.is_valid():
@@ -227,3 +230,125 @@ def schedule_recording(request):
         return Response({'message': 'Recording scheduled correctly', 'RID': recording_time.RID}, status=status.HTTP_201_CREATED) 
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+
+
+@api_view(['GET'])
+def get_recordings(request):
+    uid = request.session.get('uid', None)
+
+    if not uid:
+        return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    recordings = RecordingTime.objects.filter(UID=uid).order_by('-time_start')  
+    page_size = 5  # number of recordings per page
+    page_number = request.query_params.get('page', 1)  # get the page number from the request, default is 1
+
+    paginator = Paginator(recordings, page_size)
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)  # if page is not an integer deliver the first page
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)  # if page exceeds range deliver the last page
+
+    serializer = RecordingTimeSerializer(page_obj.object_list, many=True)
+
+    response_data = {
+        'count': paginator.count,
+        'total_pages': paginator.num_pages,
+        'current_page': page_number,
+        'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
+        'previous_page': page_obj.previous_page_number() if page_obj.has_previous() else None,
+        'results': serializer.data,
+    }
+
+    return Response(response_data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def delete_recording(request):
+    '''
+    request_body structure:
+    {
+        "RID": "<int: recording ID>",
+    }
+    '''
+    uid = request.session.get('uid', None)
+
+    if not uid:
+        return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        rid = request.data['RID']
+        recording = RecordingTime.objects.get(RID=rid)
+        if recording.UID_id != uid:
+            return Response({'error': 'You do not have permission to delete this recording'}, status=status.HTTP_403_FORBIDDEN)
+        else: 
+            recording.delete()
+            return Response({'message': 'Recording deleted'}, status=status.HTTP_200_OK) 
+
+    except RecordingTime.DoesNotExist:
+        return Response({'error': 'Recording does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+
+    except Exception as e:
+        return Response({'error': f'Error deleting recording: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_summaries(request):
+    uid = request.session.get('uid', None)
+
+    if not uid:
+        return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    summaries = Summary.objects.filter(UID=uid).order_by('-time_start')
+    page_size = 5
+    page_number = request.query_params.get('page', 1)
+
+    paginator = Paginator(summaries, page_size)
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    serializer = SummarySerializer(page_obj.object_list, many=True)
+
+    response_data = {
+        'count': paginator.count,
+        'total_pages': paginator.num_pages,
+        'current_page': page_number,
+        'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
+        'previous_page': page_obj.previous_page_number() if page_obj.has_previous() else None,
+        'results': serializer.data,
+    }
+
+    return Response(response_data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def delete_summary(request):
+    '''
+    request_body structure:
+    {
+        "SID": "<int: summary ID>",
+    }
+    '''
+    uid = request.session.get('uid', None)
+
+    if not uid:
+        return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        sid = request.data['SID']
+        summary = Summary.objects.get(SID=sid)
+        if summary.UID_id != uid:
+            return Response({'error': 'You do not have permission to delete this summary'}, status=status.HTTP_403_FORBIDDEN)
+        else: 
+            summary.delete()
+            return Response({'message': 'Summary deleted'}, status=status.HTTP_200_OK) 
+
+    except Summary.DoesNotExist:
+        return Response({'error': 'Summary does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+
+    except Exception as e:
+        return Response({'error': f'Error deleting summary: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

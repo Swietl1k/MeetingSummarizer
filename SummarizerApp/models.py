@@ -22,6 +22,7 @@ class RecordingTime(models.Model):
     RID = models.AutoField(primary_key=True)
     UID = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name='recordings', db_index=True)
     title = models.CharField(max_length=255)
+    window_name = models.CharField(max_length=255, null=True, blank=True)
     time_start = models.DateTimeField()
     time_end = models.DateTimeField()
 

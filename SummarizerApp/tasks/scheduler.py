@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import logging
+import shutil
 import threading
 from SummarizerApp.models import RecordingTime
 import time
@@ -16,7 +17,7 @@ logger = logging.getLogger('SummarizerApp')
 
 
 def monitor_recording_schedule(uid):
-    from .audio import record_audio
+    from .recording import record_meeting
     stop_monitoring.clear()
     monitor_error_flag.clear()
 
@@ -38,7 +39,7 @@ def monitor_recording_schedule(uid):
                         logger.warning(f'directory already exists: {recording_path}')
 
                     stop_recording.clear()
-                    recording_thread = threading.Thread(target=record_audio, args=(recording_length, recording_path, uid, rt.title), daemon=True)
+                    recording_thread = threading.Thread(target=record_meeting, args=(recording_length, recording_path, uid, rt.title), daemon=True)
                     recording_thread.start()
                     stop_monitoring.set()
 
@@ -47,7 +48,7 @@ def monitor_recording_schedule(uid):
                     rt.delete()
 
                     if os.path.exists(f'{RECORDINGS_DIR}\\{rid}') and not processing_thread_alive.is_set():
-                        os.mkdir(f'{RECORDINGS_DIR}\\{rid}')
+                        shutil.rmtree(f'{RECORDINGS_DIR}\\{rid}')
                     
                     logger.info(f'RecordingTime deleted RID={rid}')
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, RecordingTime
+from .models import User, RecordingTime, Summary
 from datetime import datetime 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -22,7 +22,11 @@ class UserSerializer(serializers.ModelSerializer):
 class RecordingTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecordingTime
-        fields = ['RID', 'time_start', 'time_end', 'UID', 'title']
+        fields = ['RID', 'time_start', 'time_end', 'UID', 'title', 'window_name']
+        extra_kwargs = {
+            'window_name': {'required': False},
+        }
+
 
     '''
     def create(self, validated_data):
@@ -33,3 +37,8 @@ class RecordingTimeSerializer(serializers.ModelSerializer):
         recording_time.save()
         return recording_time
     '''
+
+class SummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Summary
+        fields = ['SID', 'UID', 'title', 'time_start', 'time_end', 'transcription', 'summary']
