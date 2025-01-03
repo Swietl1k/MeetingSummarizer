@@ -1,0 +1,15 @@
+@startuml
+
+scale 1920 width
+left to right direction
+
+node "Frontend" as fr
+
+node "Backend" as bc
+
+database "Baza danych" as db
+
+fr -- bc
+bc -- db
+
+@enduml
