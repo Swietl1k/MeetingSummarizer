@@ -1,0 +1,39 @@
+@startuml use_case_diagram
+skinparam SequenceMessageAlignment center
+left to right direction
+
+rectangle "SRPW" {
+    (Weryfikuj użytkownika) as (weryfikuj)
+    (Generuj raport) as (gen_rap)
+    (Generuj \n streszczenie raportu) as (gen_streszcz)
+    (Wyślij raport na \n pocztę elektorniczną) as (wyślij)
+    (Przeglądaj raporty) as (przegl_rap)
+    (Zarządzaj bazą danych) as (zarz_bd)
+    (Przechwytuj \n wideokonferencję) as (przechw_wid)
+    (Wykonaj transkrypcję \n mowy na tekst) as (trans)
+    (Wykonaj OCR \n udostępnianej prezentacji) as (ocr)
+    
+
+
+    przegl_rap ..> weryfikuj : <<include>>
+    zarz_bd ..> weryfikuj : <<include>>
+    gen_rap ..> ocr : <<include>>
+    gen_rap ..> trans : <<include>>
+    gen_rap ..> weryfikuj : <<include>>
+    gen_streszcz ..> weryfikuj : <<include>>
+    wyślij ..> weryfikuj : <<include>>
+    ocr ..> przechw_wid : <<include>>
+    trans ..> przechw_wid : <<include>>
+
+}
+
+
+:Użytkownik: -- gen_rap
+:Użytkownik: -- gen_streszcz
+:Użytkownik: -- przegl_rap
+:Użytkownik: -- wyślij
+:Adminstrator: --  zarz_bd
+przechw_wid --- :Oprogramowanie do \n   wideokonferencji: 
+
+
+@enduml
