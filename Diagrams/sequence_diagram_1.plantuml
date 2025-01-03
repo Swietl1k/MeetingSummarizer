@@ -1,0 +1,43 @@
+@startuml sequence_diagram
+
+skinparam SequenceMessageAlignment center
+
+actor Administrator as admin
+actor Użytkownik as user
+participant "Interfejs użytkownika (frontend)" as ui
+participant "Backend" as sys
+database "Baza danych" as db
+
+== Proces weryfikacji użytkownika ==
+
+admin -> ui ++ : pobierzDaneLogowania() - od aktora
+user -> ui : pobierzDaneLogowania() - od aktora
+
+   
+ui -> sys ++ : odbierzDaneLogowania()
+sys -> db ++ : sprawdźDane()
+
+alt Pomyślne logowanie
+    db --> sys : zaloguj(), dane istnieją
+        
+    group Autoryzacja
+        sys -> db : sprawdźUprawnienia()
+        db --> sys : autoryzuj(), uprawnienia
+    end
+        
+    sys -> ui : wyswietl()
+
+    alt Administrator
+        ui -> admin : Zalogowano jako Administrator
+    
+    else Użytkownik
+        ui -> user : Zalogowano jako Użytkownik   
+    end
+else Nieudane logowanie
+    db --> sys -- : Dane nie istnieją
+    sys -> ui -- : wyświetl()
+    ui -> admin : Błąd logowania
+    ui -> user -- : Błąd logowania
+end
+
+@enduml
