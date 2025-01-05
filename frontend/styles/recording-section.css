@@ -6,6 +6,7 @@
   
   .timer-display {
     background-color: var(--primary-color);
+    color: var(--quaternary-color);
     border-radius: 5px;
     display: flex;
     justify-content: center;
@@ -23,6 +24,7 @@
     color: var(--quaternary-color);
     width: 190px;
     font-size: 20px;
+    cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;

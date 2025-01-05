@@ -1,5 +1,6 @@
 @import url("style.css");
 @import url("recording-section.css");
+@import url("scheduling-section.css");
 
 .main-content {
   display: grid;
@@ -22,12 +23,6 @@
   grid-row-gap: 20px;
 }
 
-
-.recording-planning {
-  background-color: var(--secondary-color);
-  border-radius: 5px;
-  padding: 20px 20px;
-}
 
 .recording-plan-list {
   background-color: var(--secondary-color);

@@ -21,6 +21,7 @@ body {
   font-family: 'Source Sans 3', sans-serif;
   padding-top: 150px;
   padding-bottom: 50px;
+  user-select: none;
 }
 
 nav {
@@ -51,6 +52,7 @@ nav .btn-enter-menu {
   height: 70px;
   width: 70px;
   background-color: var(--secondary-color);
+  cursor: pointer;
   margin-top: 15px;
   margin-bottom: 15px;
   display: flex;

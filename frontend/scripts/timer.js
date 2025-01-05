@@ -8,6 +8,7 @@ document.querySelector(".btn-start-recording").addEventListener("click", () => {
         const startTime = new Date().getTime();
         localStorage.setItem("startTime", startTime);
         interval = setInterval(refreshTimerDisplay, 1000);
+        console.log(interval);
     }
 })
 
@@ -15,6 +16,7 @@ document.querySelector(".btn-stop-recording").addEventListener("click", () => {
     // sending info to the server
     // getting the response from the server
     interval = clearInterval(interval);
+    console.log(interval);
     localStorage.removeItem("startTime");
 })
 
@@ -28,6 +30,7 @@ document.querySelector(".btn-cancel-recording").addEventListener("click", () => 
 window.addEventListener("load", () => {
     if (localStorage.getItem("startTime") !== null) {
         interval = setInterval(refreshTimerDisplay, 1000);
+        console.log(interval)
     }
 })
 

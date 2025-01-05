@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=menu" />
     <link rel="stylesheet" href="../styles/recording.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
     
     <title>MeetingSummarizer</title>
   </head>
@@ -77,6 +79,35 @@
 
         <div class="recording-planning">
           <h1>Scheduling recording</h1>
+          <div class="input-container" id="first-input-container">
+            <input type="text" placeholder="Start date and time" data-input> <!-- input is mandatory -->
+          
+            <a class="input-button" title="toggle" data-toggle>
+              <span class="material-symbols-outlined">today</span>
+            </a>
+            
+            <a class="input-button" title="clear" data-clear>
+              <span class="material-symbols-outlined">close</span>
+            </a>
+          </div>
+          
+          <div class="input-container" id="second-input-container">
+            <input type="text" placeholder="End date and time" data-input> <!-- input is mandatory -->
+          
+            <a class="input-button" title="toggle" data-toggle>
+              <span class="material-symbols-outlined">event</span>
+            </a>
+            
+            <a class="input-button" title="clear" data-clear>
+              <span class="material-symbols-outlined">close</span>
+            </a>
+          </div>
+
+          <button>
+            <span class="material-symbols-outlined">add_to_queue</span>
+            <span>Add to list</span>
+          </button>
+
         </div>
       </div>
 
@@ -87,6 +118,10 @@
         
         
     </div>
+    
     <script src="../scripts/timer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="../scripts/scheduling.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   </body>
 </html>
