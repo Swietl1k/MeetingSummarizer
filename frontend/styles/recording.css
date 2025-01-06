@@ -1,6 +1,7 @@
 @import url("style.css");
 @import url("recording-section.css");
 @import url("scheduling-section.css");
+@import url("list-section.css");
 
 .main-content {
   display: grid;
@@ -19,13 +20,26 @@
 
 .recording-container {
   display: grid;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: auto;
   grid-row-gap: 20px;
 }
-
 
 .recording-plan-list {
   background-color: var(--secondary-color);
   border-radius: 5px;
   padding: 20px 20px;
+
 }
+
+::-webkit-scrollbar {
+  width:10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tertiary-color);
+  background: var(--quaternary-color);
+  border-radius: 1px;
+}
+
+
+

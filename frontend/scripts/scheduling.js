@@ -1,3 +1,5 @@
+import {updateListElements} from "./list.js"
+
 function dateTimeInfo(dateObj) {
 
     return {
@@ -40,7 +42,7 @@ function upadateCalendarParameters(dateStr, instance) {
 
 flatpickr("#first-input-container", {
     enableTime: true,
-    dateFormat: "Y-m-d H:i",
+    dateFormat: "Y-m-dTH:i:S",
     altInput: true,
     altFormat: "d F Y (H:i K)",
     time_24hr: true,
@@ -73,7 +75,7 @@ flatpickr("#first-input-container", {
 
 flatpickr("#second-input-container", {
     enableTime: true,
-    dateFormat: "Y-m-d H:i",
+    dateFormat: "Y-m-dTH:i:S",
     altInput: true,
     altFormat: "d F Y (H:i K)",
     time_24hr: true,
@@ -111,7 +113,10 @@ document.querySelector(".recording-planning button").addEventListener("click", (
         ".recording-planning input[placeholder='End date and time']"
     ).value;
     
-    
+    const title = document.querySelector(
+        ".recording-planning input[placeholder='Title']"
+    ).value;
+
 
     if (startDateTimeStr === "" || endDateTimeStr === "") {
         alert("Please fill in both date and time fields.");
@@ -126,16 +131,38 @@ document.querySelector(".recording-planning button").addEventListener("click", (
         }
     }
 
-    const data = {
-        start: startDateTimeStr, 
-        end: endDateTimeStr
+    const scheduleData = {
+        title: title,
+        time_start: startDateTimeStr, 
+        time_end: endDateTimeStr
     }
 
-    console.log(data);
+    console.log(scheduleData);
 
-    axios.post("/api", data)
-    .then((response) => {
-        console.log(response);
+    axios.post("http://127.0.0.1:8000/SummarizerApp/schedule_recording", scheduleData)
+        .then((response) => {
+            const data = response.data;
+        
+            if (data.message == "Recording scheduled correctly") {
+                axios.get("http://127.0.0.1:8000/SummarizerApp/get_recordings")
+                    .then((response) => {
+                        if ("results" in response) {
+                            updateListElements(response.data.results)
+                        } else {
+                            alert(response.data.message)
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    })
+
+            } else if ("message" in data) {
+                alert(data.message);
+            } else if ("error" in data) {
+                alert(data.error);
+            } else {
+                alert(data)
+            }
     })
     .catch((error) => {
         console.log(error);

@@ -1,0 +1,20 @@
+.scrollbox {
+    height: 427px;
+    overflow:auto;
+  }
+  
+  .list-element {
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    padding: 10px;
+  }
+  
+  .list-element p {
+    font-size: 18px;
+    padding-bottom: 5px;
+  }
+  
+  .list-element span {
+    font-size: 15px;
+    color: var(--quaternary-color)
+  }
