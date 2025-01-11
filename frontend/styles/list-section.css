@@ -1,20 +1,47 @@
 .scrollbox {
-    height: 427px;
-    overflow:auto;
-  }
-  
-  .list-element {
-    background-color: var(--primary-color);
-    border-radius: 5px;
-    padding: 10px;
-  }
-  
-  .list-element p {
-    font-size: 18px;
-    padding-bottom: 5px;
-  }
-  
-  .list-element span {
-    font-size: 15px;
-    color: var(--quaternary-color)
-  }
+  height: 427px;
+  overflow:auto;
+}
+
+.list-element {
+  background-color: var(--primary-color);
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+.list-element p {
+  font-size: 18px;
+  padding-bottom: 5px;
+}
+
+.list-element span {
+  font-size: 15px;
+  color: var(--quaternary-color)
+}
+
+#context-menu {
+  display: none;
+  position: fixed;
+  width: 120px;
+  list-style-type: none;
+  background-color: var(--quaternary-color);
+  padding: 5px;
+  color: var(--primary-color);
+  border-radius: 2px;
+}
+
+#context-menu li {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#context-menu li:hover {
+  padding-left: 10px;
+  background-color: var(--primary-color);
+  color: var(--quaternary-color);
+}

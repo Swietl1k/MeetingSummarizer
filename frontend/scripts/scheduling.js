@@ -1,4 +1,4 @@
-import {updateListElements} from "./list.js"
+import { updateListElements } from "./list.js"
 
 function dateTimeInfo(dateObj) {
 
@@ -36,6 +36,32 @@ function upadateCalendarParameters(dateStr, instance) {
             instance.set("defaultHour", "12");
             instance.set("defaultMinute", "0");
         }
+}
+
+async function scheduleRecording(url, scheduleData) {
+    
+    const response = await axios.post(url, scheduleData);
+    const data = response.data;
+        
+    if (data.message === "Recording scheduled correctly") {
+        return data.message;
+    } else if ("message" in data) {
+        throw new Error(data.message);
+    } else if ("error" in data) {
+        throw new Error(data.error);
+    } else {
+        throw new Error(data);
+    }
+}  
+
+export async function getRecordings(url) {
+    const response = await axios.get(url);
+
+    if ("results" in response.data) {
+        return response.data.results;
+    } else {
+        throw new Error(response.data.message);
+    }
 }
 
 
@@ -118,8 +144,8 @@ document.querySelector(".recording-planning button").addEventListener("click", (
     ).value;
 
 
-    if (startDateTimeStr === "" || endDateTimeStr === "") {
-        alert("Please fill in both date and time fields.");
+    if (startDateTimeStr === "" || endDateTimeStr === "" || title === "") {
+        alert("Please fill in every field.");
         return;
     } else {
         const startDateTime = new Date(startDateTimeStr);
@@ -139,32 +165,13 @@ document.querySelector(".recording-planning button").addEventListener("click", (
 
     console.log(scheduleData);
 
-    axios.post("http://127.0.0.1:8000/SummarizerApp/schedule_recording", scheduleData)
-        .then((response) => {
-            const data = response.data;
-        
-            if (data.message == "Recording scheduled correctly") {
-                axios.get("http://127.0.0.1:8000/SummarizerApp/get_recordings")
-                    .then((response) => {
-                        if ("results" in response) {
-                            updateListElements(response.data.results)
-                        } else {
-                            alert(response.data.message)
-                        }
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    })
-
-            } else if ("message" in data) {
-                alert(data.message);
-            } else if ("error" in data) {
-                alert(data.error);
-            } else {
-                alert(data)
-            }
-    })
-    .catch((error) => {
-        console.log(error);
-    });
+    scheduleRecording("http://127.0.0.1:8000/SummarizerApp/schedule_recording/",scheduleData)
+        .then(() => getRecordings("http://127.0.0.1:8000/SummarizerApp/get_recordings/"))
+        .then((results) => updateListElements(results))
+        .catch((error) => {
+            alert("Error: " + error.message);
+            console.error("Error: ", error.message);
+        });
 });
+
+
