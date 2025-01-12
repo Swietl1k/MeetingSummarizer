@@ -24,8 +24,8 @@ export function updateListElements(data) {
 
 async function deleteRecording(url, rid) {
     const response = await axios.post(url, {
-        RID: rid
-    });
+            RID: rid
+        });
 
     const successRegex = /20\d/;
     if (successRegex.test(response.status.toString())) {
