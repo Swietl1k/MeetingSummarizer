@@ -14,4 +14,5 @@ urlpatterns = [
     path('get_summaries/', views.get_summaries, name='get_summaries'),
     path('delete_recording/', views.delete_recording, name='delete_recording'),
     path('delete_summary/', views.delete_summary, name='delete_summary'),
-]
+    path('generate_pdf/', views.generate_pdf, name='generate_pdf'),
+]   

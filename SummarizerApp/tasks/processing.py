@@ -7,8 +7,12 @@ from SummarizerApp.threading_variables import processing_thread_alive
 from groq import Groq
 from pathlib import Path
 
+# Set the path to the tesseract executable
+TESSERACT_PATH = 'C:\Program Files\Tesseract-OCR\\tesseract'
+pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+
+
 logger = logging.getLogger('SummarizerApp')
-pytesseract.pytesseract.tesseract_cmd = 'C:\Program Files\Tesseract-OCR\\tesseract'
 key = os.getenv('GROQ_API_KEY', '').strip()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 RECORDINGS_DIR = str(BASE_DIR) + "\\Recordings"

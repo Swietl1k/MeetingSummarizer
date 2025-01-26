@@ -21,6 +21,10 @@ import pytesseract
 import random 
 import shutil
 import logging 
+from django.http import FileResponse
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.shortcuts import get_object_or_404
 
 
 CHUNK_SIZE = 1024
@@ -35,6 +39,8 @@ monitoring_thread = None
 recording_thread = None
 logger = logging.getLogger('SummarizerApp')
 
+if not os.path.exists(RECORDINGS_DIR):
+    os.mkdir(RECORDINGS_DIR)
 
 
 @api_view(['GET'])
@@ -352,3 +358,54 @@ def delete_summary(request):
 
     except Exception as e:
         return Response({'error': f'Error deleting summary: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['POST'])
+def generate_pdf(request):
+    '''
+    request_body structure:
+    {
+        "SID": "<int: summary ID>",
+    }
+    '''
+    sid = request.data['SID']
+    summary = get_object_or_404(Summary, SID=sid)
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer)
+
+    pdf.setFont("Helvetica", 14)
+    pdf.drawString(50, 800, f"Meeting Title: {summary.title}")
+    pdf.drawString(50, 780, f"Start Time: {summary.time_start}")
+    pdf.drawString(50, 760, f"End Time: {summary.time_end}")
+
+    pdf.setFont("Helvetica", 12)
+    pdf.drawString(50, 720, "Transcription:")
+    pdf.setFont("Helvetica", 10)
+    text_object = pdf.beginText(50, 700)
+    text_object.setTextOrigin(50, 700)
+    text_object.setFont("Helvetica", 10)
+
+    # wrap transcription text to fit on the page
+    transcription_lines = summary.transcription.split("\n")
+    for line in transcription_lines:
+        text_object.textLine(line)
+
+    pdf.drawText(text_object)
+
+    pdf.setFont("Helvetica", 12)
+    pdf.drawString(50, 400, "Summary:")
+    pdf.setFont("Helvetica", 10)
+    text_object = pdf.beginText(50, 380)
+
+    summary_lines = summary.summary.split("\n")
+    for line in summary_lines:
+        text_object.textLine(line)
+
+    pdf.drawText(text_object)
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+    logger.info(f"Generated PDF for summary {summary.title}")
+
+    return FileResponse(buffer, as_attachment=True, filename=f"{summary.title}_summary.pdf")
