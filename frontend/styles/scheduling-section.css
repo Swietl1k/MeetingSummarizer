@@ -1,0 +1,56 @@
+.recording-planning {
+	background-color: var(--secondary-color);
+	border-radius: 5px;
+	padding: 20px 20px;
+}
+  
+.recording-planning .input-container {
+	width: 70%;
+	display: flex;
+	align-items: center;
+	padding-bottom: 20px;
+	justify-content: flex-start;
+}
+  
+.input-container input {
+	width: 60%;
+	color: var(--quaternary-color);
+	font-size: 15px;
+	background-color: var(--primary-color);
+	padding: 20px;
+	border: none;
+	border-radius: 5px;
+	margin-right: 10px;
+}
+
+.input-container a {
+	cursor: pointer;
+	color: var(--quaternary-color);
+	padding: 10px;
+	transition: all 0.3s ease;
+}
+
+.input-container a[title="toggle"]:hover {
+	color: greenyellow;
+}
+
+.input-container a[title="clear"]:hover {
+	color: red;
+}
+
+.recording-planning button {
+	background-color: transparent;
+	color: var(--quaternary-color);
+	font-size: 15px;
+	display: flex;
+	align-items: center;
+	margin-left: 20px;
+	border: none;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.recording-planning button:hover {
+	color: greenyellow;
+}
+

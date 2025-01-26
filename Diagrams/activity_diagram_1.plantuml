@@ -1,0 +1,31 @@
+@startuml
+
+scale 1920 width
+
+<style>
+title {
+    FontSize: 24
+}
+</style>
+
+title Proces generowania raportu (główna funkcjonalność SRPW)
+
+|Użytkownik|
+start
+:Potwierdź tożsamość;
+fork
+    :Wybierz źródło do przechwycenia;
+
+|  Oprogramowanie\ndo wideokonferencji|
+fork again
+    :Udostępnij wideokonferencję;
+end fork
+
+|SRPW (backend)|
+:Przechwyć obraz i dźwięk;
+:Wykonaj OCR udostępnionej prezentacji;
+:Wykonaj transkrypcję mowy na tekst;
+:Stwórz notatkę/raport;
+
+stop
+@enduml
