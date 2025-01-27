@@ -1,5 +1,6 @@
 import { getRecordings } from "./scheduling.js";
 
+
 export function updateListElements(data) {
     const scrollbox = document.querySelector(".scrollbox");
     scrollbox.innerHTML = "";
@@ -18,9 +19,10 @@ export function updateListElements(data) {
             <span>${dateRange}</span>
         `
 
-        document.querySelector(".scrollbox").appendChild(listElement);
+        scrollbox.appendChild(listElement);
     });
 }
+
 
 async function deleteRecording(url, rid) {
     const response = await axios.post(url, {
@@ -37,6 +39,8 @@ async function deleteRecording(url, rid) {
         throw new Error(response.data.error || response.data.message);
     }
 }
+
+
 
 const updateContextMenuPosition = (contextMenu, mousePositionX, mousePositionY) => {
     contextMenu.style.display = "block";

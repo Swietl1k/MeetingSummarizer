@@ -1,14 +1,13 @@
-@import url("style.css");
+/* @import url("style.css"); */
 @import url("recording-section.css");
 @import url("scheduling-section.css");
 @import url("list-section.css");
+
 
 .main-content {
   display: grid;
   grid-template-columns: 2fr 1fr;
   grid-column-gap: 20px;
-  padding: 0 20px;
-
 }
 
 .main-content h1 {

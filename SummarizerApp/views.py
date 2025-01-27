@@ -195,6 +195,8 @@ def schedule_recording(request):
     }
     '''
     uid = request.session.get('uid', None)
+    
+    print(uid)
 
     if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)

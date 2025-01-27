@@ -1,0 +1,94 @@
+.main-content {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-column-gap: 50px;
+  grid-row-gap: 50px;
+}
+
+.summary-card {
+  /* height: 350px; */
+  background-color: var(--secondary-color);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-container {
+  background-color: var(--primary-color);
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  padding: 10px 5px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+}
+
+.header-container span {
+  font-size: 30px;
+  color: var(--tertiary-color);
+  transition: all 0.3s ease;
+}
+
+.header-container span:hover {
+  color: var(--quaternary-color);
+}
+
+.docs-symbol-container {
+  padding: 50px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.docs-symbol-container span {
+  font-size: 100px;
+  color: var(--tertiary-color);
+  transition: all 0.3s ease;
+}
+
+.docs-symbol-container span:hover {
+  color: var(--quaternary-color);
+}
+
+.description-container {
+  background-color: var(--primary-color);
+  border-top: 5px;
+  flex:1;
+  padding: 15px;
+  word-break: break-word; 
+}
+
+.description-container p {
+  font-size: 20px;
+  padding-bottom: 10px;
+}
+
+.description-container span {
+  font-size: 15px;
+  color: var(--quaternary-color);
+}
+
+#context-menu {
+  display: none;
+  position: fixed;
+  width: 120px;
+  list-style-type: none;
+  background-color: var(--quaternary-color);
+  padding: 5px;
+  color: var(--primary-color);
+  border-radius: 2px;
+}
+
+#context-menu li {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#context-menu li:hover {
+  padding-left: 10px;
+  background-color: var(--primary-color);
+  color: var(--quaternary-color);
+}

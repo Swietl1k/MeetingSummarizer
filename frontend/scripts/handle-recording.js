@@ -46,35 +46,37 @@ startButtton.addEventListener("click", () => {
 
     if (interval === undefined && localStorage.getItem("startTime") === null) {
         startRecording("http://127.0.0.1:8000/SummarizerApp/start_recording", title)
-        .then(() => {
-            resetTimer(timerDispaly);
-            const startTime = new Date().getTime();
-            localStorage.setItem("startTime", startTime);
-            interval = setInterval(() => {
-                refreshTimerDisplay(timerDispaly);
-            }, 1000);
-        })
-        .catch((error) => {
-            alert("Error: " + error.message);
-            console.log("Error: ", error.message);
-        });
-    }    
+            .then(() => {
+                resetTimer(timerDispaly);
+                const startTime = new Date().getTime();
+                localStorage.setItem("startTime", startTime);
+                interval = setInterval(() => {
+                    refreshTimerDisplay(timerDispaly);
+                }, 1000);
+            })
+            .catch((error) => {
+                alert("Error: " + error.message);
+                console.log("Error: ", error.message);
+            });
+    }   
 })
 
 
 const stopButton = document.querySelector(".btn-stop-recording");
 
 stopButton.addEventListener("click", () => {
-    endRecording("http://127.0.0.1:8000/SummarizerApp/end_recording")
-        .then((message) => {
-            alert(message);
-            interval = clearInterval(interval);
-            localStorage.removeItem("startTime");
-        })
-        .catch((error => {
-            alert("Errror: " + error.message);
-            console.log("Error: ", error.message);
-        }))
+    if (interval || localStorage.getItem("startTime")) {
+        endRecording("http://127.0.0.1:8000/SummarizerApp/end_recording")
+            .then((message) => {
+                alert(message);
+                interval = clearInterval(interval);
+                localStorage.removeItem("startTime");
+            })
+            .catch((error => {
+                alert("Errror: " + error.message);
+                console.log("Error: ", error.message);
+            }))
+    }
 })
 
 

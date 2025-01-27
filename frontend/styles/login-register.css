@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap');
+
+:root {
+  --primary-color: #2b2d31;
+  --secondary-color: #313338;
+  --tertiary-color: #8b9198;
+  --quaternary-color: #dbdee1;
+  --quinary-color: #35373c;
+  
+}
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Source Sans 3', sans-serif;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--quinary-color);
+}
+
+form {
+  background-color: var(--primary-color);
+  padding: 50px 100px;
+  border: solid;
+  border-radius: 5px;
+  border-color: var(--tertiary-color);
+  border-width: 2px;
+  
+}
+
+form h1 {
+  font-size: 40px;
+  color: var(--quaternary-color);
+  text-align: center;
+}
+
+form .input-container {
+  width: 100%;
+  margin: 30px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: solid;
+  border-color: var(--quaternary-color);
+  border-width: 1px;
+  border-radius: 5px;
+  padding: 10px 10px;
+  background-color: var(--tertiary-color);
+}
+
+form input {
+  border: none;
+  background-color: transparent;
+  color: var(--secondary-color);
+  outline: none;
+  margin: 0 10px;
+  font-size: 16px;
+}
+
+.input-container span {
+  color: var(--secondary-color);
+}
+
+form .btn-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+form .btn {
+  border: solid;
+  border-width: 2px;
+  outline: none;
+  cursor: pointer;
+  padding: 10px 30px;
+  border-radius: 5px;
+  font-size: 16px;
+  border-color: var(--quaternary-color);
+  background-color: var(--tertiary-color);
+  color: var(--quinary-color);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+form .btn:hover {
+  border-color: var(--tertiary-color);
+  background-color: var(--quinary-color);
+  color: var(--quaternary-color);
+}
+
+form .register-link-container {
+  text-align: center;
+}
+
+.register-link-container p, p a {
+  color: var(--quaternary-color);
+  font-size: 14px;
+}
+
+.register-link-container p a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register-link-container p a:hover {
+  text-decoration: underline;
+}

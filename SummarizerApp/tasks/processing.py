@@ -8,7 +8,7 @@ from groq import Groq
 from pathlib import Path
 
 # Set the path to the tesseract executable
-TESSERACT_PATH = 'C:\Program Files\Tesseract-OCR\\tesseract'
+TESSERACT_PATH = 'C:\\Program Files\\Tesseract-OCR\\tesseract'
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 
