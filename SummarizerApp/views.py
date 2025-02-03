@@ -25,7 +25,9 @@ from django.http import FileResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from django.shortcuts import get_object_or_404
-
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth import authenticate, login as django_login
 
 CHUNK_SIZE = 1024
 MAX_RECORD_LENGTH = 3 * 60 * 60  # 3 hours
@@ -77,12 +79,16 @@ def register(request):
     }
     '''
 
-    serializer = UserSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        return Response({'message': 'User registered successfully', 'UID': user.UID}, status=status.HTTP_201_CREATED)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    data = request.data
+    try:
+        user = User.objects.create(
+            username=data['username'],
+            email=data['email'],
+            password=make_password(data['password'])  # Hash the password
+        )
+        return Response({'message': 'User registered successfully', 'UID': user.id}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -94,25 +100,30 @@ def login(request):
     "password": <string: example>,
     }
     '''
-
     username = request.data['username']
     password = request.data['password']
+    print("login")
 
     try:
-        user = User.objects.get(username=username)
-        if user.check_password(password):
-            request.session['uid'] = user.UID
-            return Response({'message': 'Login successful', 'UID': user.UID, 'username': user.username}, status=status.HTTP_200_OK)
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            django_login(request, user)  # Log the user in and create a session
+            print(user.id)
+            return Response({'message': 'Login successful', 'UID': user.id, 'username': user.username}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid login or password'}, status=status.HTTP_401_UNAUTHORIZED)
-    except User.DoesNotExist:
-        return Response({'error': 'User does not exist'}, status=status.HTTP_401_UNAUTHORIZED)
-    
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['GET'])
 def logout(request):
+    if not request.session.get('uid', None):
+        return Response({'message': 'No user logged in'}, status=status.HTTP_401_UNAUTHORIZED)
+    
     request.session.pop('uid', None)
-    return Response({'error': 'User logged out'}, status=status.HTTP_200_OK)
+    return Response({'message': 'User logged out'}, status=status.HTTP_200_OK)
 
 
 
@@ -194,11 +205,11 @@ def schedule_recording(request):
         "time_end": "<string: YYYY-MM-DDTHH:mm:ss>",
     }
     '''
-    uid = request.session.get('uid', None)
-    
-    print(uid)
 
-    if not uid:
+
+    user = request.user
+    print(user.id)
+    if not user.is_authenticated:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -230,7 +241,7 @@ def schedule_recording(request):
 
 
     data = request.data.copy()
-    data['UID'] = uid
+    data['UID'] = user.id
 
     serializer = RecordingTimeSerializer(data=data)
     if serializer.is_valid():

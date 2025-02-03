@@ -1,23 +1,15 @@
 from rest_framework import serializers
 from .models import User, RecordingTime, Summary
 from datetime import datetime 
+from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['UID', 'email', 'password', 'username']
+        fields = ['id', 'email', 'password', 'username']
         extra_kwargs = {
             'password': {'write_only': True}
         }
-
-    def create(self, validated_data):
-        user = User(
-            username=validated_data['username'],
-            email=validated_data['email']
-        )
-        user.set_hash_password(validated_data['password'])
-        user.save()
-        return user
     
 class RecordingTimeSerializer(serializers.ModelSerializer):
     class Meta:

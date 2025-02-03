@@ -1,11 +1,5 @@
 from django.contrib import admin
-from .models import User, RecordingTime
-
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('UID', 'email') 
-    search_fields = ('UID', 'email')  
-    list_filter = ('UID',)  
+from .models import RecordingTime
 
 @admin.register(RecordingTime)
 class RecordingTimeAdmin(admin.ModelAdmin):

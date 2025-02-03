@@ -21,13 +21,17 @@ registerLink.addEventListener("click", () => {
 });
 
 
-
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const signInBtn = document.querySelector(".login-form .btn");
 
 signInBtn.addEventListener("click", () => {
     apiClient.makeRequest({
         url: "/login/", 
         method: "post", 
+        withCredentials: true,
+        headers: {
+            'X-CSRFToken': crsfToken,
+        },
         data: {
             username: document.querySelector(".login-form input[placeholder='Username']").value,
             password: document.querySelector(".login-form input[placeholder='Password']").value

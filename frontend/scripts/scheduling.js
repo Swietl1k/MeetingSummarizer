@@ -40,7 +40,9 @@ function upadateCalendarParameters(dateStr, instance) {
 
 async function scheduleRecording(url, scheduleData) {
     
-    const response = await axios.post(url, scheduleData);
+    const response = await axios.post(url, scheduleData, {
+        withCredentials: true,
+    });
     const data = response.data;
         
     if (data.message === "Recording scheduled correctly") {

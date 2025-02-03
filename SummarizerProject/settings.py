@@ -61,6 +61,8 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
 ROOT_URLCONF = 'SummarizerProject.urls'
 
 TEMPLATES = [
@@ -165,7 +167,6 @@ DATETIME_FORMAT="%Y-%m-%d%H:%M:%S"
 L10N=False
 
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
@@ -177,6 +178,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-SESSION_COOKIE_SAMESITE = 'None'  # Ciasteczka dostępne w przypadku CORS
+SESSION_COOKIE_SAMESITE = 'Lax'  # Ciasteczka dostępne w przypadku CORS
 SESSION_COOKIE_SECURE = False  # Tylko przez HTTPS (należy działać na HTTPS)
 
+CSRF_COOKIE_NAME = "csrftoken"
+CSRF_COOKIE_HTTPONLY = False
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5500",  # Frontend's domain
+]
