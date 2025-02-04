@@ -21,7 +21,6 @@ registerLink.addEventListener("click", () => {
 });
 
 
-const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const signInBtn = document.querySelector(".login-form .btn");
 
 signInBtn.addEventListener("click", () => {
@@ -29,15 +28,13 @@ signInBtn.addEventListener("click", () => {
         url: "/login/", 
         method: "post", 
         withCredentials: true,
-        headers: {
-            'X-CSRFToken': crsfToken,
-        },
         data: {
             username: document.querySelector(".login-form input[placeholder='Username']").value,
             password: document.querySelector(".login-form input[placeholder='Password']").value
         }})
-            .then(() => {
-                window.location.replace("../views/recording.html")
+            .then((response) => {
+                console.log(response);
+                window.location.replace("../views/recording.html");
             })
             .catch((error) => {
                 alert("Error: " + error.message);
@@ -58,9 +55,10 @@ signUpBtn.addEventListener("click", () => {
             username: document.querySelector(".register-form input[placeholder='Username']").value,
             password: document.querySelector(".register-form input[placeholder='Password']").value
         }})
-            .then(() => {
+            .then((response) => {
                 registerForm.style.display = "none";
                 loginForm.style.display = "block";
+                console.log(response);
             })
             .catch((error) => {
                 alert("Error: " + error.message);

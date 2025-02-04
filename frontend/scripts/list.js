@@ -41,7 +41,6 @@ async function deleteRecording(url, rid) {
 }
 
 
-
 const updateContextMenuPosition = (contextMenu, mousePositionX, mousePositionY) => {
     contextMenu.style.display = "block";
 

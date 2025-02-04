@@ -109,6 +109,7 @@ def login(request):
         if user is not None:
             django_login(request, user)  # Log the user in and create a session
             print(user.id)
+            request.session["uid"] = user.id
             return Response({'message': 'Login successful', 'UID': user.id, 'username': user.username}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid login or password'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -319,7 +320,7 @@ def get_summaries(request):
     if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    summaries = Summary.objects.filter(UID=uid).order_by('-time_start')
+    summaries = Summary.objects.filter(UID=3).order_by('-time_start')
     page_size = 5
     page_number = request.query_params.get('page', 1)
 

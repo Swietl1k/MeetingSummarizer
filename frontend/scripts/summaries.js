@@ -45,14 +45,17 @@ const apiClient = new ApiClient("http://127.0.0.1:8000/SummarizerApp");
 
 const updateSummariesGrid = (requestConfig) => {
     apiClient.makeRequest(requestConfig)
-        .then((data) => createSummariesCards(data.results))
+        .then((data) => {
+            console.log(data.results);
+            createSummariesCards(data.results);
+        })
         .catch((error) => {
             alert("Error: " + error.message);
             console.error("Error:", error.message);
         });
 };
     
-updateSummariesGrid({url: "/get_summaries", method: "get", credentials: "include"});
+updateSummariesGrid({url: "/get_summaries", method: "get", withCredentials: true});
 
 
 const summaryCard = null;
