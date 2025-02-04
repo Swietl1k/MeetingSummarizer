@@ -209,7 +209,6 @@ def schedule_recording(request):
 
 
     user = request.user
-    print(user.id)
     if not user.is_authenticated:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -259,7 +258,13 @@ def get_recordings(request):
     if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    recordings = RecordingTime.objects.filter(UID=uid).order_by('-time_start')  
+    recordings = RecordingTime.objects.filter(UID=uid).order_by('-time_start') 
+    serializer = RecordingTimeSerializer(recordings, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+    ''' 
     page_size = 5  # number of recordings per page
     page_number = request.query_params.get('page', 1)  # get the page number from the request, default is 1
 
@@ -281,8 +286,10 @@ def get_recordings(request):
         'previous_page': page_obj.previous_page_number() if page_obj.has_previous() else None,
         'results': serializer.data,
     }
-
+    
     return Response(response_data, status=status.HTTP_200_OK)
+    '''
+
 
 @api_view(['POST'])
 def delete_recording(request):
@@ -320,7 +327,12 @@ def get_summaries(request):
     if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    summaries = Summary.objects.filter(UID=3).order_by('-time_start')
+    summaries = Summary.objects.filter(UID=uid).order_by('-time_start')
+    serializer = RecordingTimeSerializer(summaries, many=True)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+    '''
     page_size = 5
     page_number = request.query_params.get('page', 1)
 
@@ -344,6 +356,7 @@ def get_summaries(request):
     }
 
     return Response(response_data, status=status.HTTP_200_OK)
+    '''
 
 @api_view(['POST'])
 def delete_summary(request):

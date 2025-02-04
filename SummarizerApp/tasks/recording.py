@@ -6,7 +6,7 @@ import wave
 from datetime import datetime
 import logging
 from pathlib import Path
-from .processing import transcribe, process_recording 
+from .processing import periodical_processing, process_recording 
 from SummarizerApp.threading_variables import stop_recording
 from .screenshot import take_screenshot
 
@@ -17,7 +17,7 @@ MAX_RECORD_LENGTH = 3 * 60 * 60  # 3 hours
 MONITOR_INTERVAL = 20
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 RECORDINGS_DIR = str(BASE_DIR) + "\\Recordings"
-RECORDING_INTERVAL = 60 # max 60 secconds so it doesnt exceed groq whisper limits on audio recording length
+AI_API_INTERVAL = 90 # max 90 secconds so it doesnt exceed api token limits
 SCREENSHOT_INTERVAL = 20 # secconds between each screenshot while recording a meeting
 
 
@@ -71,8 +71,8 @@ def record_meeting(recording_length, recording_path, uid, title, window_name = N
                         ) as stream:
                 #print(f"The next {recording_length} seconds will be written to {wav_path}")
 
-                if recording_length - current_length >= RECORDING_INTERVAL:
-                    time_wait = RECORDING_INTERVAL
+                if recording_length - current_length >= AI_API_INTERVAL:
+                    time_wait = AI_API_INTERVAL
                 else:
                     time_wait = recording_length - current_length
 
@@ -88,25 +88,26 @@ def record_meeting(recording_length, recording_path, uid, title, window_name = N
             time_end = datetime.now()
             wave_file.close()
 
-            transcription_thread = threading.Thread(target=transcribe, args=(recording_path, wav_index), daemon=True)
+            period_process_thread = threading.Thread(target=periodical_processing, args=(recording_path, wav_index), daemon=True)
             for i in range(10):
-                # when recording is a couple seconds longer than whole minutes, this waits up to 10s for the last transcription to finish
-                # if not than runs transcription thread immediately
-                if not transcription_thread.is_alive():
-                    logger.debug(f'transcription thread started, wav_index={wav_index}')
-                    transcription_thread.start()
+                # when recording is a couple seconds longer than whole minutes, this waits up to 10s for the last processing to finish
+                # if not than runs processing thread immediately
+                if not period_process_thread.is_alive():
+                    logger.debug(f'periodical processing thread started, wav_index={wav_index}')
+                    period_process_thread.start()
                     break
 
                 if i == 9:
-                    logger.error("transcription thread didnt terminate in time")
+                    logger.error("periodical processing thread didnt terminate in time before next interval")
 
                 time.sleep(1)
 
-            current_length += RECORDING_INTERVAL
+
+            current_length += AI_API_INTERVAL
             wav_index += 1
 
  
-        transcription_thread.join()
+        period_process_thread.join()
         monitoring_thread = threading.Thread(target=monitor_recording_schedule, args=(uid,), daemon=True)
         monitoring_thread.start()
 

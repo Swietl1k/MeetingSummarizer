@@ -22,9 +22,21 @@ client = Groq(
 )
 
 
+def periodical_processing(recording_path, wav_index):
+    transcription = transcribe(recording_path, wav_index)
+    with open(f'{recording_path}\\transcription_{wav_index}.txt', 'w', encoding='utf-8') as file:
+        file.write(transcription.text)
+        logger.debug(f"transcription file saved wav_index={wav_index}")
+
+    ocr_txt = ocr(recording_path)
+    sum_txt = summarizeText(recording_path, wav_index, ocr_txt)
+    with open(f'{recording_path}\\summary_{wav_index}.txt', 'w', encoding='utf-8') as f:
+        f.write(sum_txt)
+        logger.debug(f"summary file saved wav_index={wav_index}")
+
+
 def transcribe(recording_path, wav_index):
     wav_path = f'{recording_path}\\audio_{wav_index}.wav'
-    txt_path = f'{recording_path}\\transcription_{wav_index}.txt'
 
     with open(wav_path, "rb") as file:
         transcription = client.audio.transcriptions.create(
@@ -33,76 +45,113 @@ def transcribe(recording_path, wav_index):
             response_format="verbose_json",
         )
         
-    with open(txt_path, 'w') as file:
-        file.write(transcription.text)
-        logger.debug(f"transcription file saved wav_index={wav_index}")
-
+    return transcription
+    
 
 def ocr(recording_path):
+    '''
+    Find all screenshots in the recording path, ocr and combine them into one text file
+    After combining the text files, remove the screenshots
+    '''
     text_combined = ""
-    i = 0
-    while os.path.exists(f'{recording_path}\\screenshot{i}.png'):
-        text = pytesseract.image_to_string(f'{recording_path}\\screenshot{i}.png')
+    paths = find_files_with_keyword(recording_path, 'screenshot') 
+
+    for path in paths:
+        text = pytesseract.image_to_string(path)
         text_combined += text
-        with open(f'{recording_path}\\screenshot{i}.txt', 'w', encoding='utf-8') as f:
-            f.write(text)
+        os.remove(path)
 
-        i+=1
+    return text_combined
+    
 
-    with open(f'{recording_path}\\text_combined.txt', 'w', encoding='utf-8') as f:
-            f.write(text_combined)
+def summarizeText(recording_path, wav_index, txt):
+    completion = client.chat.completions.create(
+        model="llama3-8b-8192",  
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a summarization assistant for text derived from OCR of online meeting screenshots. "
+                    "Your task is to return a concise and relevant summary of the content presented in a meeting. "
+                    "Do not include filler or explanatory text (e.g., 'This appears to be...', or 'Based on the text provided...'). "
+                    "Ensure your response only includes the summary text without any introductory or concluding remarks."
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Please summarize the following text strictly and concisely:\n{txt}\n\n"
+                    "Only return the summary text, nothing else."
+                )
+            }
+        ],
+        temperature=0.7,  # keep responses focused and consistent
+        max_tokens=512,
+        top_p=1,
+        stream=True,
+        stop=None,
+    )
 
+    summary = ""
+    for chunk in completion:
+        summary += chunk.choices[0].delta.content or ""
 
-def summarizeText(recording_path):
-    try:
-        with open(f'{recording_path}\\text_combined.txt', 'r', encoding='utf-8') as file:
-            text = file.read()
+    return summary
 
-        completion = client.chat.completions.create(
-            model="llama3-8b-8192",  
-            messages=[
-                {"role": "system", "content": "You need to summarize text that comes from ocr of online meeting screenshots (keep in mind that the screenshots are taken periodically and dont only capture the presentation but also the meeting app interface, sumarize content only relevant to the presentation)."},
-                {"role": "user", "content": f"Please summarize the following text:\n{text}"}
-            ],
-            temperature=1,  # Adjust for creativity (lower values are more deterministic)
-            max_tokens=512,  # Limit the output length of the summary
-            top_p=1,
-            stream=True,
-            stop=None,
-        )
-
-        summary = ""
-        for chunk in completion:
-            summary += chunk.choices[0].delta.content or ""
-
-        return summary
-
-    except FileNotFoundError:
-        logger.error("text_combined.txt not found ")
-        return "Error: The specified file was not found."
-    except Exception as e:
-        logger.error(str(e))
-        return f"An error occurred: {str(e)}"
-
-
+    
 
 def process_recording(recording_path, wav_index, uid, title, time_start, time_end):
     processing_thread_alive.set()
     
-    ocr(recording_path)
-    txt_summarized = summarizeText(recording_path)
-
     # add all transcribed text from audio recording to one file
     combined_transcription = ""
     for i in range(wav_index):
-        with open(f'{recording_path}\\transcription_{i}.txt', 'r') as file:
+        with open(f'{recording_path}\\transcription_{i}.txt', 'r', encoding="utf-8") as file:
             combined_transcription += file.read()
+
+    combined_summary = ""
+    for i in range(wav_index):
+        with open(f'{recording_path}\\summary_{i}.txt', 'r', encoding="utf-8") as file:
+            combined_summary += file.read()
+
+
+
+    completion = client.chat.completions.create(
+        model="llama3-8b-8192",  
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are an assistant responsible for cleaning up and refining text. "
+                    "Your task is to remove any repetitive phrases or unnecessary text from summaries while keeping only the essential content. "
+                    "For example, remove phrases like 'Here is the summary:' or any similar opening or closing remarks. "
+                    "Ensure the result is a clean, concise, and polished version of the provided text."
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Please clean up the following summary text by removing repetitive phrases or irrelevant lines:\n{combined_summary}\n\n"
+                    "Return only the cleaned-up summary text without any opening or closing remarks."
+                )
+            }
+        ],
+        temperature=0.7,
+        max_tokens=512,
+        top_p=1,
+        stream=True,
+        stop=None,
+    )
+
+    cleaned_summary = ""
+    for chunk in completion:
+        cleaned_summary += chunk.choices[0].delta.content or ""
 
     #delete files used for process
     shutil.rmtree(recording_path)
 
     try:
-        user_instance = User.objects.get(UID=uid)
+        user_instance = User.objects.get(id=uid)
 
         summary = Summary(
             UID=user_instance,
@@ -110,7 +159,7 @@ def process_recording(recording_path, wav_index, uid, title, time_start, time_en
             time_start=time_start,
             time_end=time_end,
             transcription=combined_transcription,
-            summary=txt_summarized,
+            summary=cleaned_summary,
         )
         summary.save()
 
@@ -123,6 +172,18 @@ def process_recording(recording_path, wav_index, uid, title, time_start, time_en
                 file.write(combined_transcription)
             
             with open(f'{recording_path}\\summarized_text.txt', 'w') as f:
-                f.write(txt_summarized)
+                f.write(combined_summary)
 
     processing_thread_alive.clear()
+
+
+def find_files_with_keyword(directory, keyword):
+    """
+    Returns a list of file paths in the provided directory that contain the keyword in their filename.
+    """
+    matching_files = []
+
+    for filename in os.listdir(directory):
+        if keyword in filename:
+            matching_files.append(os.path.join(directory, filename))
+    return matching_files
