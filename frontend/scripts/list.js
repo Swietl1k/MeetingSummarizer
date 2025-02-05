@@ -1,14 +1,16 @@
-import { getRecordings } from "./scheduling.js";
+import { ApiClient } from "./ApiClient.js";
+import { formatDateTime } from "./date-time-info.js";
+import { getCookie } from "./get-cookie.js";
 
 
-export function updateListElements(data) {
+export function createListElements(data) {
     const scrollbox = document.querySelector(".scrollbox");
     scrollbox.innerHTML = "";
     
     data.forEach((item) => {
         const rid = item.RID;
         const title = item.title;
-        const dateRange = `${item.time_start} - ${item.time_end}`;
+        const dateRange = `${formatDateTime(item.time_start)} - ${formatDateTime(item.time_end)}`;
 
         const listElement = document.createElement("div");
         listElement.className = "list-element";
@@ -23,21 +25,20 @@ export function updateListElements(data) {
     });
 }
 
-
-async function deleteRecording(url, rid) {
-    const response = await axios.post(url, {
-            RID: rid
-        });
-
-    const successRegex = /20\d/;
-    if (successRegex.test(response.status.toString())) {
-        return response.data.message;
-    }
-
-    const errorRegex = /[4,5]\d{2}/;
-    if (errorRegex.test(response.status.toString())) {
-        throw new Error(response.data.error || response.data.message);
-    }
+export function updateListElements(apiClient) {
+    apiClient.makeRequest({
+        url: "/get_recordings",
+        method: "get",
+        withCredentials: true
+    })
+        .then((data) => {
+            console.log(data);
+            createListElements(data);
+        })
+        .catch((error) => {
+            alert("Error: " + error.message);
+            console.error("Error:", error.message);
+        })
 }
 
 
@@ -59,7 +60,11 @@ const updateContextMenuPosition = (contextMenu, mousePositionX, mousePositionY) 
     }
 }
 
-const contextMenu = document.getElementById("context-menu");
+
+const apiClient = new ApiClient("http://127.0.0.1:8000/SummarizerApp");
+updateListElements(apiClient);
+
+let contextMenu = document.getElementById("context-menu");
 
 document.querySelector(".scrollbox").addEventListener("contextmenu", (event) => {
     const listElement = event.target.closest(".list-element");
@@ -70,15 +75,27 @@ document.querySelector(".scrollbox").addEventListener("contextmenu", (event) => 
 
         const rid = listElement.getAttribute("id");
         
+        contextMenu.replaceWith(contextMenu.cloneNode(true));
+        contextMenu = document.getElementById("context-menu");
+
         contextMenu.addEventListener("click", (event) => {
             if (event.target.closest(".delete-recording")) {
-                deleteRecording("http://127.0.0.1:8000/SummarizerApp/delete_recording", rid)
-                    .then(() => getRecordings("http://127.0.0.1:8000/SummarizerApp/get_recordings/"))
-                    .then((results) => updateListElements(results))
+                apiClient.makeRequest({
+                    url: "/delete_recording/",
+                    method: "post",
+                    data: {
+                        RID: rid
+                    },
+                    withCredentials: true,
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken")
+                    }
+                })
+                    .then((response) => updateListElements(apiClient))
                     .catch((error) => {
                         alert("Error: " + error.message);
-                        console.error("Error: ", error.message);
-                    });
+                        console.error("Error:", error.message);
+                    })
             }
         });
     }

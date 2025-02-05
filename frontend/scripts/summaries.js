@@ -1,4 +1,6 @@
-import { ApiClient } from "./api-client.js";
+import { ApiClient } from "./ApiClient.js";
+import { formatDateTime } from "./date-time-info.js";
+import { getCookie } from "./get-cookie.js";
 
 
 function createSummariesCards(results) {
@@ -8,7 +10,7 @@ function createSummariesCards(results) {
     results.forEach(item => {
         const sid = item.SID;
         const title = item.title;
-        const dateRange = `${item.time_start} - ${item.time_end}`;
+        const dateRange = `${formatDateTime(item.time_start)} - ${formatDateTime(item.time_end)}`;
     
         const summaryCard = document.createElement("div");
         summaryCard.className = "summary-card";
@@ -46,8 +48,8 @@ const apiClient = new ApiClient("http://127.0.0.1:8000/SummarizerApp");
 const updateSummariesGrid = (requestConfig) => {
     apiClient.makeRequest(requestConfig)
         .then((data) => {
-            console.log(data.results);
-            createSummariesCards(data.results);
+            console.log(data);
+            createSummariesCards(data);
         })
         .catch((error) => {
             alert("Error: " + error.message);
@@ -58,18 +60,18 @@ const updateSummariesGrid = (requestConfig) => {
 updateSummariesGrid({url: "/get_summaries", method: "get", withCredentials: true});
 
 
-const summaryCard = null;
+let summaryCard = null;
 const contextMenu = document.querySelector("#context-menu");
+
 
 document.addEventListener("click", (event) => {
     if (contextMenu.style.display === "block") {
         contextMenu.style.display = "none";
     } else if (event.target.matches(".header-container span")) {
         summaryCard = event.target.parentElement.parentElement;
-        
         contextMenu.style.left = summaryCard.offsetLeft + "px";
         contextMenu.style.top = summaryCard.offsetTop + "px"; 
-        contextMenu.style.display = "block";        
+        contextMenu.style.display = "block";  
     }
 });
 
@@ -77,19 +79,19 @@ document.addEventListener("click", (event) => {
 
 contextMenu.addEventListener("click", (event) => {
     if (event.target.closest(".open-summary")) {
+        console.log(summaryCard.getAttribute("id"));
         apiClient.makeRequest({
-            url: "/generate_pdf", 
+            url: "/generate_pdf/", 
             method: "post", 
             data: {SID: summaryCard.getAttribute("id")},
             headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/pdf"   
+                "Content-Type": "application/json", 
             },
             responseType: "blob"
         })
             .then((data) => {
-                pdf = new Blob([data], {type: "application/pdf"});
-                url = URL.createObjectURL(pdf);
+                const pdf = new Blob([data], {type: "application/pdf"});
+                const url = URL.createObjectURL(pdf);
                 open(url, "_blank");
             })
             .catch((error) => {
@@ -98,8 +100,15 @@ contextMenu.addEventListener("click", (event) => {
             });
     
     } else if (event.target.closest(".delete-summary")) {
-        apiClient.makeRequest({url: "/delete_summary/", method: "post", data: {SID: summaryCard.getAttribute("id")}})
-            .then(() => updateSummariesGrid({url: "/get_summaries", method: "get"}))
+        apiClient.makeRequest({url: "/delete_summary/",
+            method: "post", 
+            data: {SID: summaryCard.getAttribute("id")},
+            withCredentials: true,
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            }
+        })
+            .then(() => updateSummariesGrid({url: "/get_summaries", method: "get", withCredentials: true}))
             .catch((error) => {
                 alert("Error: " + error.message);
                 console.error("Error:", error.message);

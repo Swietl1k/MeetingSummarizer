@@ -1,4 +1,4 @@
-import { ApiClient } from "./api-client.js";
+import { ApiClient } from "./ApiClient.js";
 
 
 const apiClient = new ApiClient("http://127.0.0.1:8000/SummarizerApp");
@@ -24,6 +24,7 @@ registerLink.addEventListener("click", () => {
 const signInBtn = document.querySelector(".login-form .btn");
 
 signInBtn.addEventListener("click", () => {
+    console.log("DDDDDDD");
     apiClient.makeRequest({
         url: "/login/", 
         method: "post", 

@@ -31,6 +31,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth import authenticate, login as django_login
+from django.views.decorators.csrf import csrf_exempt
 
 CHUNK_SIZE = 1024
 MAX_RECORD_LENGTH = 3 * 60 * 60  # 3 hours
@@ -198,6 +199,7 @@ def end_recording(request):
         return Response({"error": f"Error while stopping the recording: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 @api_view(['POST'])
 def schedule_recording(request):
     '''
@@ -332,7 +334,7 @@ def get_summaries(request):
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
     summaries = Summary.objects.filter(UID=uid).order_by('-time_start')
-    serializer = RecordingTimeSerializer(summaries, many=True)
+    serializer = SummarySerializer(summaries, many=True)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -382,7 +384,7 @@ def delete_summary(request):
             return Response({'error': 'You do not have permission to delete this summary'}, status=status.HTTP_403_FORBIDDEN)
         else: 
             summary.delete()
-            return Response({'message': 'Summary deleted'}, status=status.HTTP_200_OK) 
+            return Response({'message': 'Summary deleted'}, status=status.HTTP_200_OK)
 
     except Summary.DoesNotExist:
         return Response({'error': 'Summary does not exist'}, status=status.HTTP_404_NOT_FOUND) 
