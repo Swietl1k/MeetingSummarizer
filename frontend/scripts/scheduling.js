@@ -1,15 +1,8 @@
-import { updateListElements } from "./list.js"
+import { ApiClient } from "./ApiClient.js";
+import { updateListElements } from "./list.js";
+import { dateTimeInfo } from "./date-time-info.js";
+import { getCookie } from "./get-cookie.js";
 
-function dateTimeInfo(dateObj) {
-
-    return {
-        year: dateObj.getFullYear().toString(),
-        month: (dateObj.getMonth() + 1).toString().padStart(2, "0"),
-        day: dateObj.getDate().toString().padStart(2, "0"),
-        hours: dateObj.getHours(),
-        minutes: dateObj.getMinutes()
-    };
-}
 
 function upadateCalendarParameters(dateStr, instance) {
         const currentDateTime = new Date();
@@ -66,6 +59,9 @@ export async function getRecordings(url) {
     }
 }
 
+
+
+const apiClient = new ApiClient("http://127.0.0.1:8000/SummarizerApp");
 
 
 flatpickr("#first-input-container", {
@@ -167,13 +163,20 @@ document.querySelector(".recording-planning button").addEventListener("click", (
 
     console.log(scheduleData);
 
-    scheduleRecording("http://127.0.0.1:8000/SummarizerApp/schedule_recording/",scheduleData)
-        .then(() => getRecordings("http://127.0.0.1:8000/SummarizerApp/get_recordings/"))
-        .then((results) => updateListElements(results))
+    apiClient.makeRequest({
+        url: "/schedule_recording/",
+        method: "post",
+        data: scheduleData,
+        withCredentials: true,
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        }
+    })
+        .then(() => updateListElements(apiClient))
         .catch((error) => {
             alert("Error: " + error.message);
             console.error("Error: ", error.message);
-        });
+        })
 });
 
 

@@ -69,7 +69,8 @@
 
 #context-menu {
   display: none;
-  position: fixed;
+  position: absolute;
+  z-index: 500;
   width: 120px;
   list-style-type: none;
   background-color: var(--quaternary-color);
