@@ -211,8 +211,9 @@ def schedule_recording(request):
     '''
 
 
-    user = request.user
-    if not user.is_authenticated:
+    uid = request.session.get('uid', None)
+    print(uid)
+    if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -244,7 +245,7 @@ def schedule_recording(request):
 
 
     data = request.data.copy()
-    data['UID'] = user.id
+    data['UID'] = uid
 
     serializer = RecordingTimeSerializer(data=data)
     if serializer.is_valid():
