@@ -23,6 +23,9 @@ import shutil
 import logging 
 from django.http import FileResponse
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import simpleSplit
+from reportlab.lib import utils
 from io import BytesIO
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
@@ -401,37 +404,52 @@ def generate_pdf(request):
     summary = get_object_or_404(Summary, SID=sid)
 
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer)
+    pdf = canvas.Canvas(buffer, pagesize=letter)
 
-    pdf.setFont("Helvetica", 14)
-    pdf.drawString(50, 800, f"Meeting Title: {summary.title}")
-    pdf.drawString(50, 780, f"Start Time: {summary.time_start}")
-    pdf.drawString(50, 760, f"End Time: {summary.time_end}")
+    page_width, page_height = letter
+    margin = 50
+    text_width = page_width - 2 * margin
+    text_height = page_height - 100  # Leaving space for header/footer
 
-    pdf.setFont("Helvetica", 12)
-    pdf.drawString(50, 720, "Transcription:")
-    pdf.setFont("Helvetica", 10)
-    text_object = pdf.beginText(50, 700)
-    text_object.setTextOrigin(50, 700)
-    text_object.setFont("Helvetica", 10)
+    y_position = page_height - 50  # Start position for text
 
-    # wrap transcription text to fit on the page
-    transcription_lines = summary.transcription.split("\n")
-    for line in transcription_lines:
-        text_object.textLine(line)
+    def add_wrapped_text(pdf, text, x, y, width, font_size, line_spacing=12):
+        pdf.setFont("Helvetica", font_size)
+        lines = simpleSplit(text, "Helvetica", font_size, width)
+        for line in lines:
+            if y < margin:  # If text goes below margin, create a new page
+                pdf.showPage()
+                pdf.setFont("Helvetica", font_size)
+                y = page_height - margin
+            pdf.drawString(x, y, line)
+            y -= line_spacing
+        return y
 
-    pdf.drawText(text_object)
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawString(margin, y_position, f"Meeting Title: {summary.title}")
+    y_position -= 20
+    pdf.drawString(margin, y_position, f"Start Time: {summary.time_start.strftime('%Y-%m-%d %H:%M:%S')}")
+    y_position -= 20
+    pdf.drawString(margin, y_position, f"End Time: {summary.time_end.strftime('%Y-%m-%d %H:%M:%S')}")
+    y_position -= 30
 
-    pdf.setFont("Helvetica", 12)
-    pdf.drawString(50, 400, "Summary:")
-    pdf.setFont("Helvetica", 10)
-    text_object = pdf.beginText(50, 380)
+    # Add transcription
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(margin, y_position, "Audio transcription:")
+    y_position -= 20
+    y_position = add_wrapped_text(
+        pdf, summary.transcription, margin, y_position, text_width, 10, line_spacing=12
+    )
 
-    summary_lines = summary.summary.split("\n")
-    for line in summary_lines:
-        text_object.textLine(line)
+    # Add summary
+    y_position -= 30
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(margin, y_position, "Summary of screen recording:")
+    y_position -= 20
+    y_position = add_wrapped_text(
+        pdf, summary.summary, margin, y_position, text_width, 10, line_spacing=12
+    )
 
-    pdf.drawText(text_object)
     pdf.showPage()
     pdf.save()
     buffer.seek(0)
