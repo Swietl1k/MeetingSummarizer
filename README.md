@@ -61,7 +61,7 @@ By following these steps, you should be able to set up and run the backend succe
 
 # Instructions to Set Up the Frontend
 
-## Steps to Set Up the Backend
+## Steps to Set Up the Frontend
 
 1. **Install extension to VS Code - "Live Server"**
 
@@ -69,4 +69,4 @@ By following these steps, you should be able to set up and run the backend succe
 
 3. **Click the "Go Live" button located on the right side of the VS Code's bottom bar**
 
-After completing the above steps, your frontend should run on http://127.0.0.1:5500/ .
+After completing the above steps, your frontend should be accessible on following url: http://127.0.0.1:5500/frontend/views/login-register.html.
