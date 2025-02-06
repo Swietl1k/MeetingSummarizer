@@ -70,3 +70,6 @@ By following these steps, you should be able to set up and run the backend succe
 3. **Click the "Go Live" button located on the right side of the VS Code's bottom bar**
 
 After completing the above steps, your frontend should be accessible on following url: http://127.0.0.1:5500/frontend/views/login-register.html.
+
+
+**Project documentation**: https://docs.google.com/document/d/1v4mwVa8E-cfHhnkNjGAt62R9Ii8p5PLqgw2Jai6vg4o/edit?tab=t.0
