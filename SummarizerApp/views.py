@@ -1,37 +1,30 @@
-from django.shortcuts import render
 from rest_framework.decorators import api_view
 import threading
 from rest_framework.response import Response
 from datetime import datetime
 from .models import User, RecordingTime, Summary
-from .serializers import UserSerializer, RecordingTimeSerializer, SummarySerializer
+from .serializers import RecordingTimeSerializer, SummarySerializer
 from .tasks.recording import record_meeting
 from .tasks.scheduler import monitor_recording_schedule 
 from .threading_variables import stop_recording, stop_monitoring, monitor_error_flag
 from rest_framework import status
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import time
-import pyaudiowpatch as pyaudio
-import wave
 from pathlib import Path
-from groq import Groq
-from PIL import ImageGrab
 import os
-import pytesseract
 import random 
-import shutil
 import logging 
 from django.http import FileResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import simpleSplit
-from reportlab.lib import utils
 from io import BytesIO
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, login as django_login
-from django.views.decorators.csrf import csrf_exempt
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+import requests
 
 CHUNK_SIZE = 1024
 MAX_RECORD_LENGTH = 3 * 60 * 60  # 3 hours
@@ -53,24 +46,33 @@ if not os.path.exists(RECORDINGS_DIR):
 def start_monitoring(request):
     global monitoring_thread
     uid = request.session.get('uid', None)
-
+ 
     if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
-
+   
     ####### START MONITORING THREAD
     monitoring_thread = threading.Thread(target=monitor_recording_schedule, args=(uid,), daemon=True)
+    
+    if monitoring_thread.is_alive():
+        return Response({'message': 'monitoring already started'}, status=status.HTTP_208_ALREADY_REPORTED)
+    
     monitoring_thread.start()
     #######
-
+ 
     if monitoring_thread.is_alive() and not monitor_error_flag.is_set():
         return Response({'message': 'monitoring started'}, status=status.HTTP_200_OK)
-
+ 
     return Response({'error': 'monitoring thread failed to start'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
 def test(request):
-    return Response({'uid': f'{request.session.get("uid", None)}'})
+    try:
+        uid = request.session.get("uid", None)
+        return Response({'uid': f'{request.session.get("uid", None)}'})
+    except Exception as e:
+        return Response({'uid': f'{request.session.get("uid", None)}'})
+    
 
 
 @api_view(['POST'])
@@ -404,6 +406,7 @@ def generate_pdf(request):
     sid = request.data['SID']
     summary = get_object_or_404(Summary, SID=sid)
 
+
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
 
@@ -414,19 +417,32 @@ def generate_pdf(request):
 
     y_position = page_height - 50  # Start position for text
 
+    def download_font(font_name, font_url):
+        response = requests.get(font_url)
+        
+        if response.status_code == 200:
+            font_stream = BytesIO(response.content)
+            pdfmetrics.registerFont(TTFont(font_name, font_stream))
+            return font_name
+        else:
+            return "Helvetica"
+        
     def add_wrapped_text(pdf, text, x, y, width, font_size, line_spacing=12):
-        pdf.setFont("Helvetica", font_size)
-        lines = simpleSplit(text, "Helvetica", font_size, width)
+        pdf.setFont("Lato", font_size)
+        lines = simpleSplit(text, "Lato", font_size, width)
         for line in lines:
             if y < margin:  # If text goes below margin, create a new page
                 pdf.showPage()
-                pdf.setFont("Helvetica", font_size)
+                pdf.setFont("Lato", font_size)
                 y = page_height - margin
             pdf.drawString(x, y, line)
             y -= line_spacing
         return y
 
-    pdf.setFont("Helvetica-Bold", 14)
+    
+    font_name = download_font("Lato", "https://github.com/google/fonts/raw/main/ofl/lato/Lato-Regular.ttf")
+
+    pdf.setFont(font_name, 14)
     pdf.drawString(margin, y_position, f"Meeting Title: {summary.title}")
     y_position -= 20
     pdf.drawString(margin, y_position, f"Start Time: {summary.time_start.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -435,7 +451,7 @@ def generate_pdf(request):
     y_position -= 30
 
     # Add transcription
-    pdf.setFont("Helvetica-Bold", 12)
+    pdf.setFont(font_name, 12)
     pdf.drawString(margin, y_position, "Audio transcription:")
     y_position -= 20
     y_position = add_wrapped_text(
@@ -444,7 +460,7 @@ def generate_pdf(request):
 
     # Add summary
     y_position -= 30
-    pdf.setFont("Helvetica-Bold", 12)
+    pdf.setFont(font_name, 12)
     pdf.drawString(margin, y_position, "Summary of screen recording:")
     y_position -= 20
     y_position = add_wrapped_text(

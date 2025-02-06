@@ -70,6 +70,20 @@ stopButton.addEventListener("click", () => {
 });
 
 
+const startThreadButton = document.querySelector(".btn-start-thread");
+
+startThreadButton.addEventListener("click", () => {
+    apiClient.makeRequest({
+        url: "/start_monitoring",
+        method: "get",
+        withCredentials: true
+    })
+        .catch((error) => {
+            alert("Error: " + error);
+            console.error("Error:", error);
+        });
+});
+
 // document.querySelector(".btn-cancel-recording").addEventListener("click", () => {
 //     interval = clearInterval(interval);
 //     localStorage.removeItem("startTime");

@@ -8,6 +8,22 @@ const registerLink = document.querySelector(".register-form a");
 const loginForm = document.querySelector(".login-form");
 const registerForm = document.querySelector(".register-form");
 
+
+apiClient.makeRequest({
+    url: "/test",
+    method: "get",
+    withCredentials: true
+})
+    .then((data) => {
+        if (data.uid !== "None") {
+            window.location.replace("../views/recording.html");
+        }
+    })
+    .catch((error) => {
+        alert("Error: " + error.message);
+        console.error("Error:", error.message);
+    })
+
 registerForm.style.display = "none";
 
 loginLink.addEventListener("click", () => {
@@ -24,7 +40,6 @@ registerLink.addEventListener("click", () => {
 const signInBtn = document.querySelector(".login-form .btn");
 
 signInBtn.addEventListener("click", () => {
-    console.log("DDDDDDD");
     apiClient.makeRequest({
         url: "/login/", 
         method: "post", 
