@@ -60,7 +60,7 @@
   transform: scale(1.1);
 }
 
-.buttons-sector .btn-cancel-recording:hover {
+.buttons-sector .btn-start-thread:hover {
   color: yellow;
   transform: scale(1.1);
 }
