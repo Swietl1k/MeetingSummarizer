@@ -22,6 +22,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, login as django_login
+from django.contrib.auth import logout as django_logout
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 import requests
@@ -129,6 +130,7 @@ def logout(request):
     if not request.session.get('uid', None):
         return Response({'message': 'No user logged in'}, status=status.HTTP_401_UNAUTHORIZED)
     
+    django_logout(request)
     request.session.pop('uid', None)
     return Response({'message': 'User logged out'}, status=status.HTTP_200_OK)
 
