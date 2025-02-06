@@ -133,6 +133,7 @@ def process_recording(recording_path, wav_index, uid, title, time_start, time_en
                 "content": (
                     f"Please clean up the following summary text by removing repetitive phrases or irrelevant lines:\n{combined_summary}\n\n"
                     "Return only the cleaned-up summary text without any opening or closing remarks."
+                    "If your summary is too short to be good, expand on the topics provided in the text to reach around a 100 words."
                 )
             }
         ],
