@@ -69,10 +69,16 @@ def start_monitoring(request):
 @api_view(['GET'])
 def test(request):
     try:
-        uid = request.session.get("uid", None)
-        return Response({'uid': f'{request.session.get("uid", None)}'})
+        uid = request.session.get('uid', None)
+        username = request.user.username
+        email= request.user.email
+        
+        return Response({'uid': uid, 'username': username, 'email': email}, status=status.HTTP_200_OK)
+    except AttributeError:
+        return Response({'uid': uid, 'username': username, 'email': None}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({'uid': f'{request.session.get("uid", None)}'})
+        print(e)
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
 
@@ -130,8 +136,7 @@ def logout(request):
     if not request.session.get('uid', None):
         return Response({'message': 'No user logged in'}, status=status.HTTP_401_UNAUTHORIZED)
     
-    django_logout(request)
-    request.session.pop('uid', None)
+    django_logout(request) # deletes session data in request.sesssion dict and also removes sessionid cookie from browser
     return Response({'message': 'User logged out'}, status=status.HTTP_200_OK)
 
 

@@ -15,7 +15,7 @@ apiClient.makeRequest({
     withCredentials: true
 })
     .then((data) => {
-        if (data.uid !== "None") {
+        if (data.uid !== null) {
             window.location.replace("../views/recording.html");
         }
     })

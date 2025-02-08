@@ -6,6 +6,7 @@ from SummarizerApp.models import User, Summary
 from SummarizerApp.threading_variables import processing_thread_alive
 from groq import Groq
 from pathlib import Path
+import time
 
 # Set the path to the tesseract executable
 TESSERACT_PATH = 'C:\\Program Files\\Tesseract-OCR\\tesseract'
@@ -102,7 +103,9 @@ def summarizeText(recording_path, wav_index, txt):
 
 def process_recording(recording_path, wav_index, uid, title, time_start, time_end):
     processing_thread_alive.set()
-    
+
+    time.sleep(8)
+
     # add all transcribed text from audio recording to one file
     combined_transcription = ""
     for i in range(wav_index):
