@@ -7,7 +7,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 from .processing import periodical_processing, process_recording 
-from SummarizerApp.threading_variables import stop_recording
+from SummarizerApp.threading_variables import stop_recording, periodical_thread_alive
 from .screenshot import take_screenshot
 
 
@@ -19,6 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 RECORDINGS_DIR = str(BASE_DIR) + "\\Recordings"
 AI_API_INTERVAL = 90 # max 90 secconds so it doesnt exceed api token limits
 SCREENSHOT_INTERVAL = 20 # secconds between each screenshot while recording a meeting
+
+
 
 
 def record_meeting(recording_length, recording_path, uid, title, window_name = None):
@@ -76,40 +78,30 @@ def record_meeting(recording_length, recording_path, uid, title, window_name = N
                 else:
                     time_wait = recording_length - current_length
 
+                
+                os.mkdir(f'{recording_path}\\screenshots_{wav_index}')
                 for i in range(time_wait):
                     if i % SCREENSHOT_INTERVAL == 0:
-                            screenshot_path = f'{recording_path}\\screenshot{(i + current_length) // SCREENSHOT_INTERVAL}.png'
+                            screenshot_path = f'{recording_path}\\screenshots_{wav_index}\\{i // SCREENSHOT_INTERVAL}.png'
                             take_screenshot(screenshot_path, window_name)
                     elif stop_recording.is_set():
                             break
                     
                     time.sleep(1)
 
-            time_end = datetime.now()
             wave_file.close()
 
             period_process_thread = threading.Thread(target=periodical_processing, args=(recording_path, wav_index), daemon=True)
-            for i in range(10):
-                # when recording is a couple seconds longer than whole minutes, this waits up to 10s for the last processing to finish
-                # if not than runs processing thread immediately
-                if not period_process_thread.is_alive():
-                    logger.debug(f'periodical processing thread started, wav_index={wav_index}')
-                    period_process_thread.start()
-                    break
-
-                if i == 9:
-                    logger.error("periodical processing thread didnt terminate in time before next interval")
-
-                time.sleep(1)
-
+            period_process_thread.start()
+            logger.debug(f'periodical processing thread started, wav_index={wav_index}')
 
             current_length += AI_API_INTERVAL
             wav_index += 1
 
- 
-        period_process_thread.join()
-        monitoring_thread = threading.Thread(target=monitor_recording_schedule, args=(uid,), daemon=True)
-        monitoring_thread.start()
-
+        time_end = datetime.now()
+        #period_process_thread.join()
         process_thread = threading.Thread(target=process_recording, args=(recording_path, wav_index, uid, title, time_start, time_end), daemon=True)
         process_thread.start()
+
+        monitoring_thread = threading.Thread(target=monitor_recording_schedule, args=(uid,), daemon=True)
+        monitoring_thread.start()

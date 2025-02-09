@@ -3,7 +3,7 @@ import shutil
 import logging
 import pytesseract
 from SummarizerApp.models import User, Summary
-from SummarizerApp.threading_variables import processing_thread_alive
+from SummarizerApp.threading_variables import processing_thread_alive, periodical_thread_alive
 from groq import Groq
 from pathlib import Path
 import time
@@ -22,18 +22,32 @@ client = Groq(
     api_key = key
 )
 
+#keep track of how many periodical processing threads are running
+periodical_proc_flag = 0
+
 
 def periodical_processing(recording_path, wav_index):
-    transcription = transcribe(recording_path, wav_index)
-    with open(f'{recording_path}\\transcription_{wav_index}.txt', 'w', encoding='utf-8') as file:
-        file.write(transcription.text)
-        logger.debug(f"transcription file saved wav_index={wav_index}")
+    global periodical_proc_flag
+    periodical_proc_flag += 1
+    
+    try: 
+        transcription = transcribe(recording_path, wav_index)
+        with open(f'{recording_path}\\transcription_{wav_index}.txt', 'w', encoding='utf-8') as file:
+            file.write(transcription.text)
+            logger.debug(f"transcription file saved wav_index={wav_index}")
 
-    ocr_txt = ocr(recording_path)
-    sum_txt = summarizeText(recording_path, wav_index, ocr_txt)
-    with open(f'{recording_path}\\summary_{wav_index}.txt', 'w', encoding='utf-8') as f:
-        f.write(sum_txt)
-        logger.debug(f"summary file saved wav_index={wav_index}")
+        ocr_txt = ocr(recording_path, wav_index)
+        sum_txt = summarizeText(recording_path, wav_index, ocr_txt)
+        with open(f'{recording_path}\\summary_{wav_index}.txt', 'w', encoding='utf-8') as f:
+            f.write(sum_txt)
+            logger.debug(f"summary file saved wav_index={wav_index}")
+
+        periodical_proc_flag -= 1
+
+    except Exception as e:
+        logger.error(f"Error processing (wav_index={wav_index}): {e}")
+        periodical_proc_flag -= 1
+        return
 
 
 def transcribe(recording_path, wav_index):
@@ -49,19 +63,20 @@ def transcribe(recording_path, wav_index):
     return transcription
     
 
-def ocr(recording_path):
+def ocr(recording_path, wav_index):
     '''
-    Find all screenshots in the recording path, ocr and combine them into one text file
+    Get all screenshots from the directory, ocr and combine them into one text file
     After combining the text files, remove the screenshots
     '''
+    screenshots_path = f'{recording_path}\\screenshots_{wav_index}'
     text_combined = ""
-    paths = find_files_with_keyword(recording_path, 'screenshot') 
+    paths = [os.path.join(screenshots_path, file) for file in os.listdir(screenshots_path) if os.path.isfile(os.path.join(screenshots_path, file))]
 
     for path in paths:
         text = pytesseract.image_to_string(path)
         text_combined += text
-        os.remove(path)
 
+    shutil.rmtree(screenshots_path)
     return text_combined
     
 
@@ -102,9 +117,23 @@ def summarizeText(recording_path, wav_index, txt):
     
 
 def process_recording(recording_path, wav_index, uid, title, time_start, time_end):
+    global periodical_proc_flag
     processing_thread_alive.set()
+    i = 0
 
-    time.sleep(8)
+    while periodical_proc_flag > 0:
+        '''
+        wait up to 60s for all periodical processing threads to finish
+        '''
+        time.sleep(1)
+        if i > 60:
+            logger.error("Periodical processing thread took too long to finish, exiting...")
+            processing_thread_alive.clear()
+            periodical_proc_flag = 0
+            return
+        
+        i += 1
+        
 
     # add all transcribed text from audio recording to one file
     combined_transcription = ""

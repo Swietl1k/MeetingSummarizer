@@ -5,7 +5,7 @@ import shutil
 import threading
 from SummarizerApp.models import RecordingTime
 import time
-from SummarizerApp.threading_variables import stop_recording, stop_monitoring, monitor_error_flag, processing_thread_alive
+from SummarizerApp.threading_variables import stop_recording, stop_monitoring, monitor_error_flag, processing_thread_alive, monitoring_thread_alive
 from datetime import datetime
 
 
@@ -22,6 +22,7 @@ def monitor_recording_schedule(uid):
     monitor_error_flag.clear()
 
     while not stop_monitoring.is_set():
+        monitoring_thread_alive.set()
         try:
             current_time = datetime.now()
             print(current_time)
@@ -59,3 +60,5 @@ def monitor_recording_schedule(uid):
             logger.error(f'error in the monitoring thread: {str(e)}')
 
         time.sleep(MONITOR_INTERVAL)
+    
+    monitoring_thread_alive.clear()

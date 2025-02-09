@@ -6,7 +6,7 @@ from .models import User, RecordingTime, Summary
 from .serializers import RecordingTimeSerializer, SummarySerializer
 from .tasks.recording import record_meeting
 from .tasks.scheduler import monitor_recording_schedule 
-from .threading_variables import stop_recording, stop_monitoring, monitor_error_flag
+from .threading_variables import stop_recording, stop_monitoring, monitor_error_flag, monitoring_thread_alive
 from rest_framework import status
 import time
 from pathlib import Path
@@ -50,13 +50,12 @@ def start_monitoring(request):
  
     if not uid:
         return Response({'message': 'No UID provided, log in the user'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    if monitoring_thread_alive.is_set():
+        return Response({'message': 'monitoring already started'}, status=status.HTTP_208_ALREADY_REPORTED)
    
     ####### START MONITORING THREAD
     monitoring_thread = threading.Thread(target=monitor_recording_schedule, args=(uid,), daemon=True)
-    
-    if monitoring_thread.is_alive():
-        return Response({'message': 'monitoring already started'}, status=status.HTTP_208_ALREADY_REPORTED)
-    
     monitoring_thread.start()
     #######
  
@@ -174,7 +173,7 @@ def start_recording(request):
     recording_thread = threading.Thread(target=record_meeting, args=(MAX_RECORD_LENGTH, recording_path, uid, title, window_name), daemon=True)
     recording_thread.start()
 
-    time.sleep(1)
+    time.sleep(2)
     if recording_thread.is_alive():
         return Response({"message": "Recording started."}, status=status.HTTP_202_ACCEPTED)  
 
@@ -246,7 +245,7 @@ def schedule_recording(request):
     elif time_difference.total_seconds() <  MONITOR_INTERVAL*2:
         return Response({'error': f'Total meeting time must be at least {MONITOR_INTERVAL*2} secconds long'}, status=400)
 
-    for rt in RecordingTime.objects.all():
+    for rt in RecordingTime.objects.filter(UID=uid):
         starts_within_existing = rt.time_start <= time_start <= rt.time_end
         ends_within_existing = rt.time_start <= time_end <= rt.time_end
         overlaps_existing = time_start < rt.time_start and time_end > rt.time_end
