@@ -1,75 +1,46 @@
-# Instructions to Set Up the Backend
+# MeetingSummarizer
 
-## Prerequisites
-1. **Python**: Ensure you have Python 3.8 or higher installed. You can download it from [python.org](https://www.python.org/downloads/).
-2. **Pip**: Ensure you have pip installed. Pip is the package installer for Python. It is usually included with Python installations.
-3. **Virtual Environment**: It is recommended to use a virtual environment to manage dependencies. You can create one using `python -m venv env`.
+## Description
 
-## Steps to Set Up the Backend
+The application allows users to generate summaries of video conferences (after logging in or creating an account). Summaries are generated in PDF format and include both the shared screen content and audio. You can see the application in action [here](./README.md##Operation-overview).
 
-1. **Clone the Repository**:
-    ```sh
-    git clone <repository_url>
-    cd <repository_directory>
-    ```
+## Application sections
+### 1. Login/register screen
 
-2. **Create and activate a Virtual Environment**
+Allows login/register to application.
 
-3. **Install Dependencies**:
-    ```sh
-    pip install -r requirements.txt
-    ```
+### 2. Recordings
 
-4. **Set up the database**:
-    In this project we used a Postgres database hosted on railway.app.
-    Log into railway and deploy a postgres database with free trial tokens.
-    In the 'Variables' tab you can find the host name, port and password .
-    In settings.py change the variables in DATABASES={} accordingly and set the railway key (next step).
-    
-5. **Set Up Environment Variables**:
-    Create a .env file in the parent directory of the project's root and add the following environment variables:
-    ```
-    DJANGO_SECRET_KEY=<your_django_key>
-    RAILWAY_IO_PASSWORD=<password_to_railway>
-    GROQ_API_KEY=<your_groq_api_key>
-    ```
+This section allows users to start recording a video conference at any chosen moment. It also enables scheduling future recordings using small calendars. Once a recording is scheduled, the information appears in the **"List of planned recordings"** subsection.
 
-6. **Install Tesseract**:
-    Ensure that the Tesseract executable is in your system's PATH.
+### 3. Summaries
 
-7. **Link Tesseract Executable in `tasks/processing.py`**:
-    In your tasks/processing.py, ensure that the path to the Tesseract executable is correctly set. For example:
-    ```python
-    TESSERACT_PATH = 'C:\\Program Files\\Tesseract-OCR\\tesseract'
-    ```
+This section contains summaries of video conferences in PDF format, which can be generated, downloaded or permanently deleted from the application at any time. Users have access only to the summaries of meetings they recorded themselves (summaries of other users are not visible).
 
-8. **Set frontend's origin**:
-    In settings.py update CORS_ALLOWED_ORIGINS and CSRF_TRUSTED_ORIGINS with your frontend's adress.
+### 4. Profile
 
-10. **Run Migrations**:
-    ```sh
-    python manage.py migrate
-    ```
+This section displays information about the currently logged-in user. From here, the user can also log out of the application.
 
-11. **Start the Development Server**:
-    ```sh
-    python manage.py runserver
-    ```
+## Used technologies
 
-By following these steps, you should be able to set up and run the backend successfully.
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
+![HTML](https://img.shields.io/badge/HTML-5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 
-# Instructions to Set Up the Frontend
+![CSS](https://img.shields.io/badge/CSS-239120?&style=for-the-badge&logo=css3&logoColor=white)
 
-## Steps to Set Up the Frontend
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
-1. **Install extension to VS Code - "Live Server"**
+![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)
 
-2. **In VS Code open file frontend/login-register.html**
+## Operation overview
 
-3. **Click the "Go Live" button located on the right side of the VS Code's bottom bar**
+Link to the demo video: https://www.dropbox.com/scl/fi/pko0jx88w70u2k5ygbz1x/MeetingSummarizer_demo.mp4?rlkey=9rreyan2v7gxjkdtc8lelozfr&st=fdp2trsz&dl=0
 
-After completing the above steps, your frontend should be accessible on following url: http://127.0.0.1:5500/frontend/views/login-register.html.
+## Documentation of Requirements Engineering
 
+Link to the documentation (in polish): https://docs.google.com/document/d/1v4mwVa8E-cfHhnkNjGAt62R9Ii8p5PLqgw2Jai6vg4o/edit?tab=t.0 
 
-**Project documentation**: https://docs.google.com/document/d/1v4mwVa8E-cfHhnkNjGAt62R9Ii8p5PLqgw2Jai6vg4o/edit?tab=t.0
+## Instruction
+
+Information on how to set up the project: [instruction](./INSTRUCTION.md)
