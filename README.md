@@ -2,7 +2,7 @@
 
 ## Description
 
-The application allows users to generate summaries of video conferences (after logging in or creating an account). Summaries are generated in PDF format and include both the shared screen content and audio. You can see the application in action [here](./README.md##Operation-overview).
+The application allows users to generate summaries of video conferences (after logging in or creating an account). Summaries are generated in PDF format and include both the shared screen content and audio. You can see the application in action [here](./README.md#operation-overview).
 
 ## Application sections
 ### 1. Login/register screen
