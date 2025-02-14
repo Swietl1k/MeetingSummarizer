@@ -4,8 +4,17 @@ const apiClient = new ApiClient("http://127.0.0.1:8000/SummarizerApp");
 const logoutButton = document.querySelector(".btn-logout");
 
 const createUserInfoFields = (username, email) => {
-    document.querySelector(".username").innerText = username;
-    document.querySelector(".email").innerText = email;
+    if (!username) {
+        document.querySelector(".username").innerText = "-";
+    } else {
+        document.querySelector(".username").innerText = username;
+    }
+
+    if (!email) {
+        document.querySelector(".email").innerText = "-";
+    } else {
+        document.querySelector(".email").innerText = email;
+    }
 }
 
 apiClient.makeRequest({
@@ -15,11 +24,12 @@ apiClient.makeRequest({
 })
     .then((data) => {
         createUserInfoFields(data.username, data.email);
+        document.querySelector(".profile-card").style.display = "flex";
     })
     .catch((error) => {
         alert("Error: " + error.message);
         console.error("Error:" , error.message);
-    })
+    });
 
     
 logoutButton.addEventListener("click", () => {
@@ -34,5 +44,5 @@ logoutButton.addEventListener("click", () => {
         .catch((error) => {
             alert("Error: "+ error.message);
             console.error("Error:", error.message);
-        })
+        });
 });

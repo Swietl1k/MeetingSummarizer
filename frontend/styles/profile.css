@@ -1,4 +1,5 @@
 .profile-card {
+    display: none;
     background-color: var(--primary-color);
     padding: 50px 100px;
     margin: 0 600px;
@@ -6,7 +7,6 @@
     border-radius: 5px;
     border-color: var(--tertiary-color);
     border-width: 2px;
-    display: flex;
     flex-direction: column;
     align-items: center;
 }
@@ -31,17 +31,24 @@
     margin: 20px;
 }
 
+.user-data-container {
+    
+}
+
 .username-container, .email-container {
+    display: flex;
+    align-items: center;
     margin-bottom: 30px;
 }
 
 .username-container span, .email-container span{
+    font-weight: 500;
     display: inline;
 }
 
 
 .username, .email {
-    display: inline;
+    display: inline-block;
     border: solid;
     border-width: 2px;
     outline: none;
@@ -56,6 +63,7 @@
 }
 
 .btn-logout {
+    font-family: inherit;
     border: solid;
     border-width: 2px;
     outline: none;
