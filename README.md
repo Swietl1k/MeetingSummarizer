@@ -2,21 +2,22 @@
 
 ## Description
 
-The application allows users to generate summaries of video conferences (after logging in or creating an account). Summaries are generated in PDF format and include both the shared screen content and audio. You can see the application in action [here](./README.md##Operation-overview).
+The application allows users to generate summaries of video conferences (after logging in or creating an account). Summaries are generated in PDF format and include both the shared screen content and audio. You can see the application in action [here](https://www.dropbox.com/scl/fi/pko0jx88w70u2k5ygbz1x/MeetingSummarizer_demo.mp4?rlkey=9rreyan2v7gxjkdtc8lelozfr&st=fdp2trsz&dl=0).
 
 ## Application sections
-### Login/register screeen**
+### 1. Login/register screen
+
 Allows login/register to application.
 
-2. **Recordings**
+### 2. Recordings
 
 This section allows users to start recording a video conference at any chosen moment. It also enables scheduling future recordings using small calendars. Once a recording is scheduled, the information appears in the **"List of planned recordings"** subsection.
 
-2. **Summaries**
+### 3. Summaries
 
 This section contains summaries of video conferences in PDF format, which can be generated, downloaded or permanently deleted from the application at any time. Users have access only to the summaries of meetings they recorded themselves (summaries of other users are not visible).
 
-4. **Profile**
+### 4. Profile
 
 This section displays information about the currently logged-in user. From here, the user can also log out of the application.
 
@@ -31,8 +32,6 @@ This section displays information about the currently logged-in user. From here,
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)
-
-
 
 ## Operation overview
 
